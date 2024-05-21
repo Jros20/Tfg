@@ -1,66 +1,76 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Modal, Button } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Modal } from 'react-native';
 import { AntDesign } from '@expo/vector-icons'; // Asegúrate de tener instalada la biblioteca de iconos
-
+import Animated, { Easing, useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 const LoginScreen = () => {
-
   const [modalVisible, setModalVisible] = useState(false);
+  const opacity = useSharedValue(0);
+
+  const openModal = () => {
+    setModalVisible(true);
+    opacity.value = withTiming(1, { duration: 500, easing: Easing.inOut(Easing.ease) });
+  };
+
+  const closeModal = () => {
+    
+    opacity.value = withTiming(0, { duration: 500, easing: Easing.inOut(Easing.ease) }, false); // Removido el llamado a setModalVisible
+    setModalVisible(false);
+  };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
 
   return (
     <View style={styles.container}>
-          <View style={styles.containercenter}>
-
-      <Image source={require('../assets/logo.png')} style={styles.logo} />
-      <TextInput
-        style={styles.input}
-        placeholder="Enter your username"
-        placeholderTextColor="#666"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Enter your password"
-        placeholderTextColor="#666"
-        secureTextEntry
-      />
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.registerButton}>
-          <Text style={styles.buttonTextRegister}>Register</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.loginButton}         onPress={() => setModalVisible(true)}>
-          <Text style={styles.buttonTextLogin}>Login</Text>
-        </TouchableOpacity>
+      <View style={styles.containercenter}>
+        <Image source={require('../assets/logo.png')} style={styles.logo} />
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your username"
+          placeholderTextColor="#666"
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Enter your password"
+          placeholderTextColor="#666"
+          secureTextEntry
+        />
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.registerButton}>
+            <Text style={styles.buttonTextRegister}>Register</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.loginButton} onPress={openModal}>
+            <Text style={styles.buttonTextLogin}>Login</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      </View>
-
 
       <Modal
-        animationType="slide"
         transparent={true}
         visible={modalVisible}
-        onRequestClose={() => {
-          setModalVisible(!modalVisible);
-        }}
+        onRequestClose={closeModal} // Cambiado para cerrar la modal
       >
-         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+        <View style={styles.modalContainer}>
+          <Animated.View style={[styles.modalContent, animatedStyle]}>
             <TouchableOpacity
               style={styles.closeButton}
-              onPress={() => setModalVisible(!modalVisible)}
+              onPress={closeModal} // Cambiado para cerrar la modal
             >
               <AntDesign name="close" size={24} color="black" />
             </TouchableOpacity>
 
             <Text style={styles.label}>NOMBRE</Text>
             <TextInput
-              style={styles.input}
+              style={styles.modalInput}
               placeholder="Enter your name"
               placeholderTextColor="#666"
             />
 
             <Text style={styles.label}>CONTRASEÑA</Text>
             <TextInput
-              style={styles.input}
+              style={styles.modalInput}
               placeholder="Enter your password..."
               placeholderTextColor="#666"
               secureTextEntry
@@ -68,7 +78,7 @@ const LoginScreen = () => {
 
             <Text style={styles.label}>CORREO ELECTRÓNICO</Text>
             <TextInput
-              style={styles.input}
+              style={styles.modalInput}
               placeholder="Enter your email"
               placeholderTextColor="#666"
             />
@@ -81,7 +91,7 @@ const LoginScreen = () => {
                 <Text style={styles.buttonTextTeacher}>PROFESOR</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </Animated.View>
         </View>
       </Modal>
     </View>
@@ -95,13 +105,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
   },
-  containercenter:{
-    
-    width: '80%',
-   
+  containercenter: {
+    justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
-    
   },
   logo: {
     width: 250,
@@ -109,7 +115,7 @@ const styles = StyleSheet.create({
     marginBottom: 50,
   },
   input: {
-    width: '80%',
+    width: 250,
     height: 40,
     borderColor: '#ccc',
     borderWidth: 1,
@@ -151,18 +157,29 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    width: '100%',   
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(114, 114, 114, 0.95)',
+    width:'90%',
+    marginStart:'5%',
+    height:'90%',
+    marginBottom:'20%'
+
   },
   modalContent: {
     width: '80%',
-    backgroundColor: '#fff',
-    padding: 20,
+    backgroundColor: '#ccc',
+    padding: 30,
     borderRadius: 10,
     alignItems: 'center',
     position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
   },
   closeButton: {
     position: 'absolute',
@@ -175,20 +192,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 10,
   },
-  input: {
+  modalInput: {
     width: '100%',
     height: 40,
-    borderColor: '#ccc',
+    borderColor: '#fff',
     borderWidth: 1,
     borderRadius: 5,
     paddingHorizontal: 10,
-    marginVertical: 10,
+    marginVertical: 20,
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginTop: 20,
+  buttonTextStudent: {
+    color: '#000',
+  },
+  buttonTextTeacher: {
+    color: '#fff',
   },
   studentButton: {
     flex: 1,
@@ -209,12 +226,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems: 'center',
     marginLeft: 5,
-  },
-  buttonTextStudent: {
-    color: '#000',
-  },
-  buttonTextTeacher: {
-    color: '#fff',
   },
 });
 

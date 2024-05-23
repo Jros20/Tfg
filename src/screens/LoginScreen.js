@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Modal } from 'react-native';
 import { AntDesign } from '@expo/vector-icons'; // Asegúrate de tener instalada la biblioteca de iconos
 import Animated, { Easing, useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import { useNavigation } from '@react-navigation/native'; // Importamos useNavigation
 
 const LoginScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const opacity = useSharedValue(0);
+  const navigation = useNavigation(); // Obtenemos la navegación
 
   const openModal = () => {
     setModalVisible(true);
@@ -13,14 +15,14 @@ const LoginScreen = () => {
   };
 
   const closeModal = () => {
-    
-    opacity.value = withTiming(0, { duration: 500, easing: Easing.inOut(Easing.ease) }, false); // Removido el llamado a setModalVisible
+    opacity.value = withTiming(0, { duration: 500, easing: Easing.inOut(Easing.ease) }, false); 
     setModalVisible(false);
   };
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
   }));
+
 
   return (
     <View style={styles.container}>
@@ -38,10 +40,10 @@ const LoginScreen = () => {
           secureTextEntry
         />
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.registerButton}>
+          <TouchableOpacity style={styles.registerButton}  onPress={openModal}>
             <Text style={styles.buttonTextRegister}>Register</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.loginButton} onPress={openModal}>
+          <TouchableOpacity style={styles.loginButton}>
             <Text style={styles.buttonTextLogin}>Login</Text>
           </TouchableOpacity>
         </View>
@@ -50,13 +52,13 @@ const LoginScreen = () => {
       <Modal
         transparent={true}
         visible={modalVisible}
-        onRequestClose={closeModal} // Cambiado para cerrar la modal
+        onRequestClose={closeModal} 
       >
         <View style={styles.modalContainer}>
           <Animated.View style={[styles.modalContent, animatedStyle]}>
             <TouchableOpacity
               style={styles.closeButton}
-              onPress={closeModal} // Cambiado para cerrar la modal
+              onPress={closeModal} 
             >
               <AntDesign name="close" size={24} color="black" />
             </TouchableOpacity>
@@ -84,7 +86,7 @@ const LoginScreen = () => {
             />
 
             <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.studentButton}>
+              <TouchableOpacity style={styles.studentButton}  onPress={() => navigation.navigate('UserInterface')}>
                 <Text style={styles.buttonTextStudent}>ALUMNO</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.teacherButton}>
@@ -97,6 +99,8 @@ const LoginScreen = () => {
     </View>
   );
 };
+
+
 
 const styles = StyleSheet.create({
   container: {
@@ -167,7 +171,7 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: '80%',
-    backgroundColor: '#ccc',
+    backgroundColor: '#cccccc',
     padding: 30,
     borderRadius: 10,
     alignItems: 'center',
@@ -195,6 +199,7 @@ const styles = StyleSheet.create({
   modalInput: {
     width: '100%',
     height: 40,
+
     borderColor: '#fff',
     borderWidth: 1,
     borderRadius: 5,

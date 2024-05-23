@@ -1,51 +1,152 @@
-// App.js
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, TouchableWithoutFeedback } from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome';
+
+const { width } = Dimensions.get('window');
 
 const UserInterface = () => {
-  const courses = [
-    { id: 1, name: 'MATEMATICAS 1' },
-    { id: 2, name: 'MATEMATICAS 2' },
-    { id: 3, name: 'MATEMATICAS 3' },
+  const [modalVisible, setModalVisible] = useState(false);
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
+  const translateX = useRef(new Animated.Value(-width)).current;
+  const userIconRef = useRef(null);
+
+  const openModal = () => {
+    setModalVisible(true);
+    Animated.timing(translateX, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeModal = () => {
+    Animated.timing(translateX, {
+      toValue: -width,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => setModalVisible(false));
+  };
+
+  const openProfileModal = () => {
+    userIconRef.current.measure((fx, fy, width, height, px, py) => {
+      setUserIconPosition({ x: px, y: py + height });
+      setProfileModalVisible(true);
+    });
+  };
+
+  const closeProfileModal = () => {
+    setProfileModalVisible(false);
+  };
+
+  const menuItems = [
+    { id: 1, name: 'DETALLES USUARIO' },
+    { id: 2, name: 'METODO DE PAGO' },
+    { id: 3, name: 'MIS CURSOS' },
+    { id: 4, name: 'BUSCO PROFE' },
+    { id: 5, name: 'TERMINOS Y CONDICIONES' },
   ];
 
+  const handleOutsidePress = () => {
+    closeModal();
+    closeProfileModal();
+  };
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.menuButton}>
-          <Text>☰</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>MIS CURSOS</Text>
-        <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.searchButton}>
-            <Text>🔍</Text>
+    <TouchableWithoutFeedback onPress={handleOutsidePress}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.menuButton} onPress={openModal}>
+            <Icon name="bars" size={24} color="#000" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.profileButton}>
-            <Text>👤</Text>
+          <Text style={styles.title}>MIS CURSOS</Text>
+          <View style={styles.headerRight}>
+            <TouchableOpacity style={styles.searchButton}>
+              <Icon name="search" size={24} color="#000" />
+            </TouchableOpacity>
+            <TouchableOpacity ref={userIconRef} style={styles.profileButton} onPress={openProfileModal}>
+              <Icon name="user" size={24} color="#000" />
+            </TouchableOpacity>
+          </View>
+        </View>
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          {menuItems.slice(2).map((course) => (
+            <View key={course.id} style={styles.courseCard}>
+              <Text style={styles.courseText}>{course.name}</Text>
+            </View>
+          ))}
+        </ScrollView>
+        <View style={styles.footer}>
+          <TouchableOpacity style={styles.footerButton}>
+            <Icon name="comments" size={24} color="#000" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.footerButton}>
+            <Icon name="book" size={24} color="#000" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.footerButton}>
+            <Icon name="search" size={24} color="#000" />
           </TouchableOpacity>
         </View>
-      </View>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {courses.map((course) => (
-          <View key={course.id} style={styles.courseCard}>
-            <Text style={styles.courseText}>{course.name}</Text>
+
+        {/* Sidebar Modal */}
+        <Modal
+          transparent={true}
+          visible={modalVisible}
+          animationType="none"
+          onRequestClose={closeModal}
+        >
+          <TouchableOpacity style={styles.modalOverlay} onPress={closeModal}>
+            <Animated.View style={[styles.modalContent, { transform: [{ translateX }] }]}>
+              <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
+                <Icon name="bars" size={24} color="#000" />
+              </TouchableOpacity>
+              {menuItems.map((item, index) => (
+                <View key={item.id} style={styles.menuItemContainer}>
+                  <Text style={styles.menuItem}>{item.name}</Text>
+                  <View style={styles.separator} />
+                </View>
+              ))}
+            </Animated.View>
+          </TouchableOpacity>
+        </Modal>
+
+        {/* Profile Modal */}
+        <Modal
+          transparent={true}
+          visible={profileModalVisible}
+          animationType="fade"
+          onRequestClose={closeProfileModal}
+        >
+          <TouchableWithoutFeedback onPress={handleOutsidePress}>
+            <View style={styles.overlay} />
+          </TouchableWithoutFeedback>
+          <View style={styles.profileModalOverlay}>
+            <View
+              style={[
+                styles.profileModalTriangle,
+                { top: userIconPosition.y - 40, left: userIconPosition.x + 10 },
+              ]}
+            />
+            <View
+              style={[
+                styles.profileModalContent,
+                { top: userIconPosition.y - 30, left: userIconPosition.x - 160 },
+              ]}
+            >
+              <TouchableOpacity style={styles.profileModalButton} onPress={() => { /* Implement Logout functionality here */ }}>
+                <Text style={styles.profileModalButtonText}>LOG OUT</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.profileModalButton} onPress={closeProfileModal}>
+                <Text style={styles.profileModalButtonText}>DETALLES</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        ))}
-      </ScrollView>
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerButton}>
-          <Text>💬</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton}>
-          <Text>📚</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton}>
-          <Text>🔍</Text>
-        </TouchableOpacity>
+        </Modal>
       </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
@@ -101,6 +202,71 @@ const styles = StyleSheet.create({
   },
   footerButton: {
     padding: 10,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-start',
+  },
+  modalContent: {
+    width: '70%',
+    height: '100%',
+    backgroundColor: '#cccccc',
+    padding: 20,
+    paddingTop: 60,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+  },
+  menuItemContainer: {
+    width: '100%',
+    paddingVertical: 10,
+  },
+  menuItem: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  separator: {
+    height: 1,
+    backgroundColor: '#000',
+    marginTop: 10,
+  },
+  profileModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileModalTriangle: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 10,
+    borderRightWidth: 10,
+    borderBottomWidth: 10,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: '#000',
+    position: 'absolute',
+  },
+  profileModalContent: {
+    width: 200,
+    backgroundColor: '#000',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    position: 'absolute',
+  },
+  profileModalButton: {
+    backgroundColor: '#1E90FF',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    marginVertical: 5,
+  },
+  profileModalButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
 

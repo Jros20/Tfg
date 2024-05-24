@@ -49,6 +49,11 @@ const UserInterface = () => {
     if (item.name === 'DETALLES USUARIO') {
       closeModal();
       navigation.navigate('UserDetail');
+    }else if (item.name === 'MIS CURSOS') {
+      navigation.navigate('UserInterface');
+    }else if (item.name === 'METODO DE PAGO'
+    ) {
+      navigation.navigate('MetodoPago');
     }
   };
   const menuItems = [

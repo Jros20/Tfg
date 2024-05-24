@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
-const UserDetail = () => {
+const MetodoPago = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
@@ -47,14 +47,12 @@ const UserDetail = () => {
   };
 
   const handleMenuItemPress = (item) => {
+    closeModal();
     if (item.name === 'DETALLES USUARIO') {
-      closeModal();
       navigation.navigate('UserDetail');
-    }else if (item.name === 'MIS CURSOS') {
-        navigation.navigate('UserInterface');
-      }else if (item.name === 'METODO DE PAGO') {
-        navigation.navigate('MetodoPago');
-      }
+    } else if (item.name === 'MIS CURSOS') {
+      navigation.navigate('UserInterface');
+    }
   };
 
   const menuItems = [
@@ -71,7 +69,7 @@ const UserDetail = () => {
         <TouchableOpacity style={styles.menuButton} onPress={openModal}>
           <Icon name="bars" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.title}>DETALLES USUARIO</Text>
+        <Text style={styles.title}>METODO DE PAGO</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.searchButton}>
             <Icon name="search" size={24} color="#000" />
@@ -84,30 +82,29 @@ const UserDetail = () => {
 
       <View style={styles.containerInside}>
         <View style={styles.profileImageContainer}>
-          <Icon name="user" size={100} color="#000" />
+          <Icon name="credit-card" size={100} color="#000" />
         </View>
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>NOMBRE</Text>
+          <Text style={styles.label}>PAN</Text>
           <TextInput
             style={styles.input}
-            value="JUAN ANTONIO"
+            value="8999-78298-8278-3892"
             editable={false}
           />
         </View>
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>CONTRASEÑA</Text>
+          <Text style={styles.label}>FECHA EXPIRACION</Text>
           <TextInput
             style={styles.input}
-            value="*************"
+            value="28/04"
             editable={false}
-            secureTextEntry
           />
         </View>
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>CORREO ELECTRÓNICO</Text>
+          <Text style={styles.label}>NUMERO SECRETO</Text>
           <TextInput
             style={styles.input}
-            value="JUANR020@GMAIL.COM"
+            value="CVC"
             editable={false}
           />
         </View>
@@ -158,28 +155,29 @@ const UserDetail = () => {
         onRequestClose={closeProfileModal}
       >
         <TouchableWithoutFeedback onPress={closeProfileModal}>
-          <View style={styles.profileModalOverlay}>
-            <View
-              style={[
-                styles.profileModalTriangle,
-                { top: userIconPosition.y - 32, left: userIconPosition.x + 10 },
-              ]}
-            />
-            <View
-              style={[
-                styles.profileModalContent,
-                { top: userIconPosition.y -25 , left: userIconPosition.x - 160 },
-              ]}
-            >
-              <TouchableOpacity style={styles.profileModalButton} onPress={() => { /* Implement logout functionality here */ }}>
-                <Text style={styles.profileModalButtonText}>CERRAR SESIÓN</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.profileModalButton} onPress={navigateToUserDetail}>
-                <Text style={styles.profileModalButtonText}>VER DETALLES</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          <View style={styles.overlay} />
         </TouchableWithoutFeedback>
+        <View style={styles.profileModalOverlay}>
+          <View
+            style={[
+              styles.profileModalTriangle,
+              { top: userIconPosition.y - 10, left: userIconPosition.x + 10 },
+            ]}
+          />
+          <View
+            style={[
+              styles.profileModalContent,
+              { top: userIconPosition.y + 10, left: userIconPosition.x - 160 },
+            ]}
+          >
+            <TouchableOpacity style={styles.profileModalButton} onPress={() => { /* Implement logout functionality here */ }}>
+              <Text style={styles.profileModalButtonText}>CERRAR SESIÓN</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.profileModalButton} onPress={navigateToUserDetail}>
+              <Text style={styles.profileModalButtonText}>VER DETALLES</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
     </View>
   );
@@ -270,11 +268,10 @@ const styles = StyleSheet.create({
   },
   profileModalOverlay: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    position: 'absolute',
   },
   profileModalTriangle: {
+    position: 'absolute',
     width: 0,
     height: 0,
     borderLeftWidth: 10,
@@ -282,31 +279,27 @@ const styles = StyleSheet.create({
     borderBottomWidth: 10,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderBottomColor: '#000',
-    position: 'absolute',
+    borderBottomColor: '#fff',
   },
   profileModalContent: {
-    width: 200,
-    backgroundColor: '#000',
-    padding: 20,
-    borderRadius: 10,
-    alignItems: 'center',
     position: 'absolute',
+    width: 200,
+    backgroundColor: '#fff',
+    borderRadius: 5,
+    padding: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 5,
   },
   profileModalButton: {
-    backgroundColor: '#1E90FF',
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 5,
-    marginVertical: 5,
   },
   profileModalButtonText: {
-    color: '#fff',
+    fontSize: 16,
     fontWeight: 'bold',
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0)',
   },
   inputContainer: {
     width: '100%',
@@ -314,27 +307,28 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
+    fontWeight: 'bold',
     marginBottom: 5,
   },
   input: {
-    height: 40,
-    borderColor: '#ccc',
     borderWidth: 1,
+    borderColor: '#ccc',
     borderRadius: 5,
-    paddingHorizontal: 10,
-    backgroundColor: '#f9f9f9',
+    padding: 10,
+    fontSize: 16,
   },
   button: {
-    backgroundColor: '#8b0000',
-    paddingVertical: 10,
+    backgroundColor: '#a67a73',
+    paddingVertical: 15,
     paddingHorizontal: 20,
     borderRadius: 5,
+    alignItems: 'center',
   },
   buttonText: {
     color: '#fff',
+    fontSize: 16,
     fontWeight: 'bold',
-    textAlign: 'center',
   },
 });
 
-export default UserDetail;
+export default MetodoPago;

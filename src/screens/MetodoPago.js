@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, TouchableWithoutFeedback } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
@@ -46,12 +46,18 @@ const MetodoPago = () => {
     navigation.navigate('UserDetail');
   };
 
+  const navigateToChatScreen = () => {
+    navigation.navigate('ChatScreen');
+  };
+
   const handleMenuItemPress = (item) => {
     closeModal();
     if (item.name === 'DETALLES USUARIO') {
       navigation.navigate('UserDetail');
     } else if (item.name === 'MIS CURSOS') {
       navigation.navigate('UserInterface');
+    } else if (item.name === 'METODO DE PAGO') {
+      navigation.navigate('MetodoPago');
     }
   };
 
@@ -114,7 +120,7 @@ const MetodoPago = () => {
       </View>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerButton}>
+        <TouchableOpacity style={styles.footerButton} onPress={navigateToChatScreen}>
           <Icon name="comments" size={24} color="#000" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.footerButton}>
@@ -170,7 +176,7 @@ const MetodoPago = () => {
               { top: userIconPosition.y + 10, left: userIconPosition.x - 160 },
             ]}
           >
-            <TouchableOpacity style={styles.profileModalButton} onPress={() => { /* Implement logout functionality here */ }}>
+            <TouchableOpacity style={styles.profileModalButton} onPress={closeProfileModal}>
               <Text style={styles.profileModalButtonText}>CERRAR SESIÓN</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.profileModalButton} onPress={navigateToUserDetail}>
@@ -263,43 +269,8 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: '#000',
-    marginTop: 10,
-  },
-  profileModalOverlay: {
-    flex: 1,
-    position: 'absolute',
-  },
-  profileModalTriangle: {
-    position: 'absolute',
-    width: 0,
-    height: 0,
-    borderLeftWidth: 10,
-    borderRightWidth: 10,
-    borderBottomWidth: 10,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: '#fff',
-  },
-  profileModalContent: {
-    position: 'absolute',
-    width: 200,
-    backgroundColor: '#fff',
-    borderRadius: 5,
-    padding: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 5,
-  },
-  profileModalButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-  },
-  profileModalButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    backgroundColor: '#e0e0e0',
+    marginVertical: 10,
   },
   inputContainer: {
     width: '100%',
@@ -311,23 +282,69 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
+    width: '100%',
     padding: 10,
-    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 5,
+    backgroundColor: '#f8f8f8',
   },
   button: {
-    backgroundColor: '#a67a73',
-    paddingVertical: 15,
+    backgroundColor: '#4CAF50',
+    paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
-    alignItems: 'center',
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  profileModalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+  },
+  profileModalTriangle: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 10,
+    borderRightWidth: 10,
+    borderBottomWidth: 10,
+    borderStyle: 'solid',
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: '#fff',
+    position: 'absolute',
+  },
+  profileModalContent: {
+    position: 'absolute',
+    width: 200,
+    backgroundColor: '#fff',
+    borderRadius: 5,
+    padding: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  profileModalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+  },
+  profileModalButtonText: {
+    fontSize: 16,
+    color: '#000',
   },
 });
 

@@ -1,17 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, TouchableWithoutFeedback, FlatList } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { useNavigation } from '@react-navigation/native'; // Importamos useNavigation
+import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
-const UserInterface = () => {
+const ChatScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
   const translateX = useRef(new Animated.Value(-width)).current;
   const userIconRef = useRef(null);
-  const navigation = useNavigation(); // Mover useNavigation dentro del componente funcional
+  const navigation = useNavigation();
 
   const openModal = () => {
     setModalVisible(true);
@@ -45,19 +45,16 @@ const UserInterface = () => {
     closeProfileModal();
     navigation.navigate('UserDetail');
   };
-  const navigateToChatScreen = () => {
-    navigation.navigate('ChatScreen');
-  };
+
   const handleMenuItemPress = (item) => {
     if (item.name === 'DETALLES USUARIO') {
       closeModal();
       navigation.navigate('UserDetail');
     }else if (item.name === 'MIS CURSOS') {
-      navigation.navigate('UserInterface');
-    }else if (item.name === 'METODO DE PAGO'
-    ) {
-      navigation.navigate('MetodoPago');
-    }
+        navigation.navigate('UserInterface');
+      }else if (item.name === 'METODO DE PAGO') {
+        navigation.navigate('MetodoPago');
+      }
   };
   const menuItems = [
     { id: 1, name: 'DETALLES USUARIO' },
@@ -67,13 +64,31 @@ const UserInterface = () => {
     { id: 5, name: 'TERMINOS Y CONDICIONES' },
   ];
 
+  const profesores = [
+    { id: 1, name: 'PROFE MATES' },
+    { id: 2, name: 'PROFE MATES' },
+    { id: 3, name: 'PROFE MATES' },
+    { id: 4, name: 'PROFE MATES' },
+    { id: 5, name: 'PROFE MATES' },
+    { id: 6, name: 'PROFE MATES' },
+    { id: 7, name: 'PROFE MATES' },
+    { id: 8, name: 'PROFE MATES' },
+  ];
+
+  const renderProfesor = ({ item }) => (
+    <TouchableOpacity style={styles.profesorContainer} onPress={() => navigation.navigate('ChatScreenDetail')}>
+      <Icon name="user" size={40} color="#000" style={styles.profesorIcon} />
+      <Text style={styles.profesorText}>{item.name}</Text>
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.menuButton} onPress={openModal}>
           <Icon name="bars" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.title}>MIS CURSOS</Text>
+        <Text style={styles.title}>CHAT</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.searchButton}>
             <Icon name="search" size={24} color="#000" />
@@ -83,15 +98,16 @@ const UserInterface = () => {
           </TouchableOpacity>
         </View>
       </View>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {menuItems.slice(2).map((course) => (
-          <View key={course.id} style={styles.courseCard}>
-            <Text style={styles.courseText}>{course.name}</Text>
-          </View>
-        ))}
-      </ScrollView>
+
+      <FlatList
+        data={profesores}
+        renderItem={renderProfesor}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContent}
+      />
+
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerButton} onPress={navigateToChatScreen}>
+        <TouchableOpacity style={styles.footerButton}>
           <Icon name="comments" size={24} color="#000" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.footerButton}>
@@ -114,11 +130,11 @@ const UserInterface = () => {
             <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
               <Icon name="bars" size={24} color="#000" />
             </TouchableOpacity>
-            {menuItems.map((item, index) => (
+            {menuItems.map((item) => (
               <TouchableOpacity key={item.id} style={styles.menuItemContainer} onPress={() => handleMenuItemPress(item)}>
-              <Text style={styles.menuItem}>{item.name}</Text>
-              <View style={styles.separator} />
-            </TouchableOpacity>
+                <Text style={styles.menuItem}>{item.name}</Text>
+                <View style={styles.separator} />
+              </TouchableOpacity>
             ))}
           </Animated.View>
         </TouchableOpacity>
@@ -138,19 +154,19 @@ const UserInterface = () => {
           <View
             style={[
               styles.profileModalTriangle,
-              { top: userIconPosition.y -800, left: userIconPosition.x + 10 },
+              { top: userIconPosition.y - 785, left: userIconPosition.x + 10 },
             ]}
           />
           <View
             style={[
               styles.profileModalContent,
-              { top: userIconPosition.y-790, left: userIconPosition.x - 160 },
+              { top: userIconPosition.y - 775, left: userIconPosition.x - 160 },
             ]}
           >
-            <TouchableOpacity style={styles.profileModalButton} onPress={() => { /* Implementar funcionalidad de cierre de sesión aquí */ }}>
+            <TouchableOpacity style={styles.profileModalButton} onPress={() => { /* Implement logout functionality here */ }}>
               <Text style={styles.profileModalButtonText}>CERRAR SESIÓN</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.profileModalButton}   onPress={navigateToUserDetail} >
+            <TouchableOpacity style={styles.profileModalButton} onPress={navigateToUserDetail}>
               <Text style={styles.profileModalButtonText}>VER DETALLES</Text>
             </TouchableOpacity>
           </View>
@@ -191,17 +207,23 @@ const styles = StyleSheet.create({
   profileButton: {
     padding: 10,
   },
-  scrollContainer: {
-    padding: 16,
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
   },
-  courseCard: {
-    backgroundColor: '#e0e0e0',
-    padding: 20,
-    marginBottom: 16,
-    borderRadius: 10,
+  profesorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderColor: '#e0e0e0',
   },
-  courseText: {
-    fontSize: 16,
+  profesorIcon: {
+    marginRight: 10,
+  },
+  profesorText: {
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   footer: {
     flexDirection: 'row',
@@ -217,7 +239,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0)',
     justifyContent: 'flex-start',
   },
   modalContent: {
@@ -283,8 +305,7 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 10,
     backgroundColor: 'rgba(0, 0, 0, 0)',
-    height: 700,
   },
 });
 
-export default UserInterface;
+export default ChatScreen;

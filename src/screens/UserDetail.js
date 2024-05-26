@@ -45,7 +45,9 @@ const UserDetail = () => {
     closeProfileModal();
     navigation.navigate('UserDetail');
   };
-
+  const navigateToChatScreen = () => {
+    navigation.navigate('ChatScreen');
+  };
   const handleMenuItemPress = (item) => {
     if (item.name === 'DETALLES USUARIO') {
       closeModal();
@@ -117,7 +119,7 @@ const UserDetail = () => {
       </View>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerButton}>
+        <TouchableOpacity style={styles.footerButton} onPress={navigateToChatScreen}>
           <Icon name="comments" size={24} color="#000" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.footerButton}>
@@ -272,7 +274,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0)',
   },
   profileModalTriangle: {
     width: 0,

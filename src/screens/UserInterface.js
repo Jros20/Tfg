@@ -48,6 +48,9 @@ const UserInterface = () => {
   const navigateToChatScreen = () => {
     navigation.navigate('ChatScreen');
   };
+  const navigateToCalendarScreen= () => {
+    navigation.navigate('CalendarScreen');
+  };
   const handleMenuItemPress = (item) => {
     if (item.name === 'DETALLES USUARIO') {
       closeModal();
@@ -94,7 +97,7 @@ const UserInterface = () => {
         <TouchableOpacity style={styles.footerButton} onPress={navigateToChatScreen}>
           <Icon name="comments" size={24} color="#000" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton}>
+        <TouchableOpacity style={styles.footerButton} onPress={navigateToCalendarScreen}>
           <Icon name="book" size={24} color="#000" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.footerButton}>

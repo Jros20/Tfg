@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Button } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Button, Platform } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 LocaleConfig.locales['es'] = {
   monthNames: ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
@@ -20,6 +21,8 @@ const CalendarScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [note, setNote] = useState('');
   const [notes, setNotes] = useState({});
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [date, setDate] = useState(new Date());
   const navigation = useNavigation();
   const today = new Date().toISOString().split('T')[0];
 
@@ -63,6 +66,13 @@ const CalendarScreen = () => {
     setModalVisible(false);
   };
 
+  const handleDateChange = (event, selectedDate) => {
+    const currentDate = selectedDate || date;
+    setShowDatePicker(Platform.OS === 'ios');
+    setDate(currentDate);
+    setSelectedDate(currentDate.toISOString().split('T')[0]);
+  };
+
   useEffect(() => {
     const newMarkedDates = {
       [today]: { selected: true, selectedColor: 'green' },
@@ -104,7 +114,7 @@ const CalendarScreen = () => {
           textDayFontSize: 16,
           textMonthFontSize: 16,
           textDayHeaderFontSize: 16
-        }}
+        }} style={styles.CalendarC}
       />
       <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
         <Text style={styles.addButtonText}>AGREGAR FECHA</Text>
@@ -124,8 +134,24 @@ const CalendarScreen = () => {
               value={note}
               onChangeText={setNote}
             />
-            <Button title="Guardar" onPress={handleAddNote} />
-            <Button title="Cancelar" color="red" onPress={() => setModalVisible(false)} />
+            <TouchableOpacity style={styles.button} onPress={() => setShowDatePicker(true)}>
+              <Text style={styles.buttonText}>Seleccionar Fecha</Text>
+            </TouchableOpacity>
+            {showDatePicker && (
+              <DateTimePicker
+                value={date}
+                mode="date"
+                display="default"
+                onChange={handleDateChange}
+                style={styles.datePicker}
+              />
+            )}
+            <TouchableOpacity style={styles.button} onPress={handleAddNote}>
+              <Text style={styles.buttonText}>Guardar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => setModalVisible(false)}>
+              <Text style={styles.buttonText}>Cancelar</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -203,6 +229,36 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingHorizontal: 10,
   },
+  datePicker: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  button: {
+    backgroundColor: '#6c757d',
+    padding: 10,
+    borderRadius: 5,
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  cancelButton: {
+    backgroundColor: '#adb5bd',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  CalendarC:{
+    paddingTop:'10%',
+    paddingBottom:'10%',
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    marginTop:'15%',
+    marginLeft:15,
+    marginRight:15,
+
+  }
 });
 
 export default CalendarScreen;

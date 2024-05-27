@@ -4,14 +4,14 @@ import LoginScreen from './src/screens/LoginScreen';
 import UserInterface from './src/screens/UserInterface';
 import MetodoPago from './src/screens/MetodoPago';
 import ChatScreen from './src/screens/ChatScreen';
-import ChatScreenDetail from './src/screens/ChatScreenDetail';
+     import ChatScreenDetail from './src/screens/ChatScreenDetail';
 import CalendarScreen from './src/screens/CalendarScreen';
+import UserDetail from './src/screens/UserDetail';
 
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
-import UserDetail from './src/screens/UserDetail';
 
 const Stack = createStackNavigator();
 

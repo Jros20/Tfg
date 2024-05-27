@@ -8,6 +8,7 @@ import ChatScreen from './src/screens/ChatScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import UserDetail from './src/screens/UserDetail';
 import SearchScreen from './src/screens/SearchScreen';
+import TeacherInterface from './src/screens/TeacherInterface';
 
 
 import { NavigationContainer } from '@react-navigation/native';
@@ -28,6 +29,7 @@ export default function App() {
         <Stack.Screen name="ChatScreenDetail" component={ChatScreenDetail} options={{ headerShown: false }} />
         <Stack.Screen name="CalendarScreen" component={CalendarScreen} options={{ headerShown: false }} />
         <Stack.Screen name="SearchScreen" component={SearchScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="TeacherInterface" component={TeacherInterface} options={{ headerShown: false }} />
 
 
       </Stack.Navigator>

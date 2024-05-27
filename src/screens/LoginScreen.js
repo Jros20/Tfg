@@ -89,7 +89,7 @@ const LoginScreen = () => {
               <TouchableOpacity style={styles.studentButton}  onPress={() => navigation.navigate('UserInterface')}>
                 <Text style={styles.buttonTextStudent}>ALUMNO</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.teacherButton}>
+              <TouchableOpacity style={styles.teacherButton } onPress={() => navigation.navigate('TeacherInterface')}>
                 <Text style={styles.buttonTextTeacher}>PROFESOR</Text>
               </TouchableOpacity>
             </View>

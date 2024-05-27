@@ -50,6 +50,9 @@ const UserInterface = () => {
   };
   const navigateToCalendarScreen= () => {
     navigation.navigate('CalendarScreen');
+  };  
+  const navigateToSearchScreen= () => {
+    navigation.navigate('SearchScreen');
   };
   const handleMenuItemPress = (item) => {
     if (item.name === 'DETALLES USUARIO') {
@@ -78,7 +81,7 @@ const UserInterface = () => {
         </TouchableOpacity>
         <Text style={styles.title}>MIS CURSOS</Text>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.searchButton}>
+          <TouchableOpacity style={styles.searchButton} onPress={navigateToSearchScreen}>
             <Icon name="search" size={24} color="#000" />
           </TouchableOpacity>
           <TouchableOpacity ref={userIconRef} style={styles.profileButton} onPress={openProfileModal}>

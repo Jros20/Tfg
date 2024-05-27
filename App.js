@@ -7,6 +7,7 @@ import ChatScreen from './src/screens/ChatScreen';
      import ChatScreenDetail from './src/screens/ChatScreenDetail';
 import CalendarScreen from './src/screens/CalendarScreen';
 import UserDetail from './src/screens/UserDetail';
+import SearchScreen from './src/screens/SearchScreen';
 
 
 import { NavigationContainer } from '@react-navigation/native';
@@ -26,6 +27,7 @@ export default function App() {
         <Stack.Screen name="ChatScreen" component={ChatScreen} options={{ headerShown: false }} />
         <Stack.Screen name="ChatScreenDetail" component={ChatScreenDetail} options={{ headerShown: false }} />
         <Stack.Screen name="CalendarScreen" component={CalendarScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="SearchScreen" component={SearchScreen} options={{ headerShown: false }} />
 
 
       </Stack.Navigator>

@@ -14,7 +14,6 @@ const CoursesScreen = () => {
   const [visibleCourses, setVisibleCourses] = useState(10);
   const [visibleProfessors, setVisibleProfessors] = useState(4);
   const [filter, setFilter] = useState('all');
-  const [view, setView] = useState('all');
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showCourses, setShowCourses] = useState(true);
@@ -54,6 +53,8 @@ const CoursesScreen = () => {
 
   const filteredCourses = filterItems(courses);
   const filteredProfessors = filterItems(professors);
+
+  const isSingleView = (showCourses && !showProfessors) || (!showCourses && showProfessors);
 
   return (
     <View style={styles.container}>
@@ -101,44 +102,71 @@ const CoursesScreen = () => {
         </View>
       </Modal>
 
-      <ScrollView contentContainerStyle={styles.scrollView}>
-        {showCourses && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>CURSOS DISPONIBLES</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScrollView}>
-              {filteredCourses.slice(0, visibleCourses).map((course) => (
-                <View key={course.id} style={styles.card}>
-                  <Text style={styles.cardText}>{course.name}</Text>
-                </View>
-              ))}
-              {visibleCourses < filteredCourses.length && (
-                <TouchableOpacity style={styles.loadMoreButton} onPress={loadMoreCourses}>
-                  <Icon name="chevron-down" size={24} color="#000" />
-                </TouchableOpacity>
-              )}
-            </ScrollView>
-          </View>
-        )}
-        {showProfessors && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>PROFESORES DISPONIBLES</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScrollView}>
-              {filteredProfessors.slice(0, visibleProfessors).map((professor) => (
-                <View key={professor.id} style={styles.professorCard}>
-                  <Image source={{ uri: professor.image }} style={styles.professorImage} />
-                  <Text style={styles.professorName}>{professor.name}</Text>
-                  <Text style={styles.professorDescription}>{professor.description}</Text>
-                </View>
-              ))}
-              {visibleProfessors < filteredProfessors.length && (
-                <TouchableOpacity style={styles.loadMoreButton} onPress={loadMoreProfessors}>
-                  <Icon name="chevron-down" size={24} color="#000" />
-                </TouchableOpacity>
-              )}
-            </ScrollView>
-          </View>
-        )}
-      </ScrollView>
+      {isSingleView ? (
+        <ScrollView contentContainerStyle={styles.verticalScrollView}>
+          {showCourses && filteredCourses.slice(0, visibleCourses).map((course) => (
+            <View key={course.id} style={[styles.card, styles.verticalCard]}>
+              <Text style={styles.cardText}>{course.name}</Text>
+            </View>
+          ))}
+          {showProfessors && filteredProfessors.slice(0, visibleProfessors).map((professor) => (
+            <View key={professor.id} style={[styles.professorCard, styles.verticalProfessorCard]}>
+              <Image source={{ uri: professor.image }} style={styles.professorImage} />
+              <Text style={styles.professorName}>{professor.name}</Text>
+              <Text style={styles.professorDescription}>{professor.description}</Text>
+            </View>
+          ))}
+          {showCourses && visibleCourses < filteredCourses.length && (
+            <TouchableOpacity style={styles.loadMoreButton} onPress={loadMoreCourses}>
+              <Icon name="chevron-down" size={24} color="#000" />
+            </TouchableOpacity>
+          )}
+          {showProfessors && visibleProfessors < filteredProfessors.length && (
+            <TouchableOpacity style={styles.loadMoreButton} onPress={loadMoreProfessors}>
+              <Icon name="chevron-down" size={24} color="#000" />
+            </TouchableOpacity>
+          )}
+        </ScrollView>
+      ) : (
+        <ScrollView contentContainerStyle={styles.scrollView}>
+          {showCourses && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>CURSOS DISPONIBLES</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScrollView}>
+                {filteredCourses.slice(0, visibleCourses).map((course) => (
+                  <View key={course.id} style={styles.card}>
+                    <Text style={styles.cardText}>{course.name}</Text>
+                  </View>
+                ))}
+                {visibleCourses < filteredCourses.length && (
+                  <TouchableOpacity style={styles.loadMoreButtonHorizontal} onPress={loadMoreCourses}>
+                    <Icon name="chevron-right" size={24} color="#000" />
+                  </TouchableOpacity>
+                )}
+              </ScrollView>
+            </View>
+          )}
+          {showProfessors && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>PROFESORES DISPONIBLES</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScrollView}>
+                {filteredProfessors.slice(0, visibleProfessors).map((professor) => (
+                  <View key={professor.id} style={styles.professorCard}>
+                    <Image source={{ uri: professor.image }} style={styles.professorImage} />
+                    <Text style={styles.professorName}>{professor.name}</Text>
+                    <Text style={styles.professorDescription}>{professor.description}</Text>
+                  </View>
+                ))}
+                {visibleProfessors < filteredProfessors.length && (
+                  <TouchableOpacity style={styles.loadMoreButtonHorizontal} onPress={loadMoreProfessors}>
+                    <Icon name="chevron-right" size={24} color="#000" />
+                  </TouchableOpacity>
+                )}
+              </ScrollView>
+            </View>
+          )}
+        </ScrollView>
+      )}
 
       <View style={styles.footer}>
         <TouchableOpacity style={styles.footerButton} onPress={() => navigation.navigate('Home')}>
@@ -181,80 +209,12 @@ const styles = StyleSheet.create({
   },
   headerRight: {
     flexDirection: 'row',
-    alignItems: 'center',
   },
   searchButton: {
     padding: 10,
   },
   profileButton: {
     padding: 10,
-  },
-  scrollView: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginVertical: 10,
-  },
-  horizontalScrollView: {
-    flexDirection: 'row',
-  },
-  card: {
-    backgroundColor: '#d3d3d3',
-    padding: 20,
-    borderRadius: 10,
-    marginRight: 10,
-  },
-  cardText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  professorCard: {
-    width: 150,
-    backgroundColor: '#d3d3d3',
-    padding: 10,
-    borderRadius: 10,
-    marginRight: 10,
-    alignItems: 'center',
-  },
-  professorImage: {
-    width: '100%',
-    height: 100,
-    borderRadius: 10,
-    marginBottom: 10,
-  },
-  professorName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  professorDescription: {
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  loadMoreButton: {
-    alignItems: 'center',
-    marginVertical: 10,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderColor: '#ccc',
-  },
-  footerButton: {
-    alignItems: 'center',
-  },
-  footerButtonText: {
-    fontSize: 12,
-    color: '#000',
   },
   modalContainer: {
     flex: 1,
@@ -263,10 +223,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    width: '80%',
+    width: 300,
     backgroundColor: '#fff',
-    padding: 20,
     borderRadius: 10,
+    padding: 20,
   },
   modalTitle: {
     fontSize: 18,
@@ -277,21 +237,113 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 10,
   },
-  modalButton: {
-    marginVertical: 10,
-    alignItems: 'center',
-  },
-  modalButtonText: {
-    color: '#fff',
-    fontSize: 16,
-  },
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
   },
   checkboxLabel: {
     fontSize: 16,
+    marginLeft: 8,
+  },
+  modalButton: {
+    marginTop: 20,
+  },
+  scrollView: {
+    flexGrow: 1,
+    padding: 16,
+  },
+  verticalScrollView: {
+    flexGrow: 1,
+    padding: 16,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  horizontalScrollView: {
+    flexDirection: 'row',
+  },
+  card: {
+    width: 150,
+    height: 150,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
+    borderRadius: 10,
+    marginRight: 16,
+  },
+  verticalCard: {
+    alignSelf: 'center',
+    width: width * 0.9,  // Aumentar el ancho de la tarjeta en vista vertical
+    marginBottom: 16,
+  },
+  cardText: {
+    fontSize: 16,
+  },
+  professorCard: {
+    width: 150,
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
+    borderRadius: 10,
+    marginRight: 16,
+    padding: 10,
+  },
+  verticalProfessorCard: {
+    alignSelf: 'center',
+    width: width * 0.9,  // Aumentar el ancho de la tarjeta en vista vertical
+    marginBottom: 16,
+  },
+  professorImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 10,
+  },
+  professorName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  professorDescription: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  loadMoreButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 50,
+    height: 50,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 25,
+    alignSelf: 'center',
+    marginTop: 10,
+  },
+  loadMoreButtonHorizontal: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 50,
+    height: 50,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 25,
+    marginLeft: 10,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+    backgroundColor: '#f8f8f8',
+  },
+  footerButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  footerButtonText: {
+    fontSize: 12,
   },
 });
 

@@ -4,11 +4,15 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import { Checkbox, Button } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
+import Footer from '../components/Footer';
+import MenuModal from '../components/MenuModal';
 
 const { width } = Dimensions.get('window');
 
 const CoursesScreen = () => {
   const navigation = useNavigation();
+  const [menuModalVisible, setMenuModalVisible] = useState(false);
+
   const [courses, setCourses] = useState([]);
   const [professors, setProfessors] = useState([]);
   const [visibleCourses, setVisibleCourses] = useState(10);
@@ -39,6 +43,33 @@ const CoursesScreen = () => {
     setVisibleProfessors(4);
     setIsFilterModalVisible(false);
   };
+  const openMenuModal = () => {
+    setMenuModalVisible(true);
+  };
+
+  const closeMenuModal = () => {
+    setMenuModalVisible(false);
+  };
+  const handleMenuItemPress = (item) => {
+    closeModal();
+    if (item.name === 'DETALLES USUARIO') {
+      navigation.navigate('UserDetail');
+    } else if (item.name === 'MIS CURSOS') {
+      navigation.navigate('UserInterface');
+    } else if (item.name === 'METODO DE PAGO') {
+      navigation.navigate('MetodoPago');
+    }
+  };
+  const closeModal = () => {
+    setNoteModalVisible(false);
+  };
+  const menuItems = [
+    { id: 1, name: 'DETALLES USUARIO' },
+    { id: 2, name: 'METODO DE PAGO' },
+    { id: 3, name: 'MIS CURSOS' },
+    { id: 4, name: 'BUSCO PROFE' },
+    { id: 5, name: 'TERMINOS Y CONDICIONES' },
+  ];
 
   const filterItems = (items) => {
     let filtered = items;
@@ -59,7 +90,7 @@ const CoursesScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.backButton}  onPress={openMenuModal}>
           <Icon name="bars" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.title}>Cursos Disponibles</Text>
@@ -101,7 +132,12 @@ const CoursesScreen = () => {
           </View>
         </View>
       </Modal>
-
+      <MenuModal
+        visible={menuModalVisible}
+        onClose={closeMenuModal}
+        menuItems={menuItems}
+        handleMenuItemPress={handleMenuItemPress}
+      />
       {isSingleView ? (
         <ScrollView contentContainerStyle={styles.verticalScrollView}>
           {showCourses && filteredCourses.slice(0, visibleCourses).map((course) => (
@@ -167,21 +203,9 @@ const CoursesScreen = () => {
           )}
         </ScrollView>
       )}
+ <Footer />
 
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerButton} onPress={() => navigation.navigate('Home')}>
-          <Icon name="home" size={24} color="#000" />
-          <Text style={styles.footerButtonText}>Inicio</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton} onPress={() => navigation.navigate('Calendar')}>
-          <Icon name="calendar" size={24} color="#000" />
-          <Text style={styles.footerButtonText}>Calendario</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton} onPress={() => navigation.navigate('Profile')}>
-          <Icon name="user" size={24} color="#000" />
-          <Text style={styles.footerButtonText}>Perfil</Text>
-        </TouchableOpacity>
-      </View>
+
     </View>
   );
 };

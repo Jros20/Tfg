@@ -1,34 +1,21 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, TouchableWithoutFeedback } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import React, { useState, useRef } from 'react';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import Footer from '../components/Footer';
+import MenuModal from '../components/MenuModal';
+import ProfileModal from '../components/ProfileModal';
 
-const { width } = Dimensions.get('window');
 
 const UserDetail = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
-  const translateX = useRef(new Animated.Value(-width)).current;
   const userIconRef = useRef(null);
   const navigation = useNavigation();
 
-  const openModal = () => {
-    setModalVisible(true);
-    Animated.timing(translateX, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const closeModal = () => {
-    Animated.timing(translateX, {
-      toValue: -width,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => setModalVisible(false));
-  };
+  const openModal = () => setModalVisible(true);
+  const closeModal = () => setModalVisible(false);
 
   const openProfileModal = () => {
     userIconRef.current.measure((fx, fy, width, height, px, py) => {
@@ -36,27 +23,24 @@ const UserDetail = () => {
       setProfileModalVisible(true);
     });
   };
-
-  const closeProfileModal = () => {
-    setProfileModalVisible(false);
-  };
+  const closeProfileModal = () => setProfileModalVisible(false);
 
   const navigateToUserDetail = () => {
     closeProfileModal();
     navigation.navigate('UserDetail');
   };
-  const navigateToChatScreen = () => {
-    navigation.navigate('ChatScreen');
-  };
+
   const handleMenuItemPress = (item) => {
+    closeModal();
     if (item.name === 'DETALLES USUARIO') {
-      closeModal();
       navigation.navigate('UserDetail');
-    }else if (item.name === 'MIS CURSOS') {
-        navigation.navigate('UserInterface');
-      }else if (item.name === 'METODO DE PAGO') {
-        navigation.navigate('MetodoPago');
-      }
+    } else if (item.name === 'MIS CURSOS') {
+      navigation.navigate('UserInterface');
+    } else if (item.name === 'METODO DE PAGO') {
+      navigation.navigate('MetodoPago');
+    } else if (item.name === 'TERMINOS Y CONDICIONES') {
+      navigation.navigate('TerminosyCondiciones');
+    }
   };
 
   const menuItems = [
@@ -75,7 +59,7 @@ const UserDetail = () => {
         </TouchableOpacity>
         <Text style={styles.title}>DETALLES USUARIO</Text>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.searchButton}>
+          <TouchableOpacity style={styles.searchButton} onPress={() => navigation.navigate('SearchScreen')}>
             <Icon name="search" size={24} color="#000" />
           </TouchableOpacity>
           <TouchableOpacity ref={userIconRef} style={styles.profileButton} onPress={openProfileModal}>
@@ -90,99 +74,35 @@ const UserDetail = () => {
         </View>
         <View style={styles.inputContainer}>
           <Text style={styles.label}>NOMBRE</Text>
-          <TextInput
-            style={styles.input}
-            value="JUAN ANTONIO"
-            editable={false}
-          />
+          <TextInput style={styles.input} value="JUAN ANTONIO" editable={false} />
         </View>
         <View style={styles.inputContainer}>
           <Text style={styles.label}>CONTRASEÑA</Text>
-          <TextInput
-            style={styles.input}
-            value="*************"
-            editable={false}
-            secureTextEntry
-          />
+          <TextInput style={styles.input} value="*************" editable={false} secureTextEntry />
         </View>
         <View style={styles.inputContainer}>
           <Text style={styles.label}>CORREO ELECTRÓNICO</Text>
-          <TextInput
-            style={styles.input}
-            value="JUANR020@GMAIL.COM"
-            editable={false}
-          />
+          <TextInput style={styles.input} value="JUANR020@GMAIL.COM" editable={false} />
         </View>
         <TouchableOpacity style={styles.button}>
           <Text style={styles.buttonText}>EDITAR INFORMACIÓN</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerButton} onPress={navigateToChatScreen}>
-          <Icon name="comments" size={24} color="#000" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton}>
-          <Icon name="book" size={24} color="#000" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton}>
-          <Icon name="search" size={24} color="#000" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Sidebar Modal */}
-      <Modal
-        transparent={true}
+      <Footer />
+      
+      <MenuModal
         visible={modalVisible}
-        animationType="none"
-        onRequestClose={closeModal}
-      >
-        <TouchableOpacity style={styles.modalOverlay} onPress={closeModal}>
-          <Animated.View style={[styles.modalContent, { transform: [{ translateX }] }]}>
-            <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
-              <Icon name="bars" size={24} color="#000" />
-            </TouchableOpacity>
-            {menuItems.map((item) => (
-              <TouchableOpacity key={item.id} style={styles.menuItemContainer} onPress={() => handleMenuItemPress(item)}>
-                <Text style={styles.menuItem}>{item.name}</Text>
-                <View style={styles.separator} />
-              </TouchableOpacity>
-            ))}
-          </Animated.View>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* Profile Modal */}
-      <Modal
-        transparent={true}
+        onClose={closeModal}
+        menuItems={menuItems}
+        handleMenuItemPress={handleMenuItemPress}
+      />
+      <ProfileModal
         visible={profileModalVisible}
-        animationType="fade"
-        onRequestClose={closeProfileModal}
-      >
-        <TouchableWithoutFeedback onPress={closeProfileModal}>
-          <View style={styles.profileModalOverlay}>
-            <View
-              style={[
-                styles.profileModalTriangle,
-                { top: userIconPosition.y - 32, left: userIconPosition.x + 10 },
-              ]}
-            />
-            <View
-              style={[
-                styles.profileModalContent,
-                { top: userIconPosition.y -25 , left: userIconPosition.x - 160 },
-              ]}
-            >
-              <TouchableOpacity style={styles.profileModalButton} onPress={() => { /* Implement logout functionality here */ }}>
-                <Text style={styles.profileModalButtonText}>CERRAR SESIÓN</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.profileModalButton} onPress={navigateToUserDetail}>
-                <Text style={styles.profileModalButtonText}>VER DETALLES</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+        onClose={closeProfileModal}
+        userIconPosition={userIconPosition}
+        navigateToUserDetail={navigateToUserDetail}
+      />
     </View>
   );
 };
@@ -191,16 +111,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  containerInside: {
-    flex: 1,
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 20,
-  },
-  profileImageContainer: {
-    marginBottom: 20,
-    alignItems: 'center',
   },
   header: {
     flexDirection: 'row',
@@ -228,87 +138,15 @@ const styles = StyleSheet.create({
   profileButton: {
     padding: 10,
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    padding: 16,
-    borderTopWidth: 1,
-    borderColor: '#e0e0e0',
-    backgroundColor: '#f8f8f8',
-  },
-  footerButton: {
-    padding: 10,
-  },
-  modalOverlay: {
+  containerInside: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-start',
-  },
-  modalContent: {
-    width: '70%',
-    height: '100%',
-    backgroundColor: '#cccccc',
+    alignItems: 'center',
+    backgroundColor: '#fff',
     padding: 20,
-    paddingTop: 60,
   },
-  closeButton: {
-    position: 'absolute',
-    top: 20,
-    left: 20,
-  },
-  menuItemContainer: {
-    width: '100%',
-    paddingVertical: 10,
-  },
-  menuItem: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#000',
-    marginTop: 10,
-  },
-  profileModalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
+  profileImageContainer: {
+    marginBottom: 20,
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0)',
-  },
-  profileModalTriangle: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 10,
-    borderRightWidth: 10,
-    borderBottomWidth: 10,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: '#000',
-    position: 'absolute',
-  },
-  profileModalContent: {
-    width: 200,
-    backgroundColor: '#000',
-    padding: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    position: 'absolute',
-  },
-  profileModalButton: {
-    backgroundColor: '#1E90FF',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    marginVertical: 5,
-  },
-  profileModalButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0)',
   },
   inputContainer: {
     width: '100%',

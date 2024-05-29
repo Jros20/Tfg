@@ -2,6 +2,9 @@ import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, TouchableWithoutFeedback } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
+import Footer from '../components/Footer';
+import MenuModal from '../components/MenuModal';
+import ProfileModal from '../components/ProfileModal';
 
 const { width } = Dimensions.get('window');
 
@@ -119,72 +122,20 @@ const MetodoPago = () => {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerButton} onPress={navigateToChatScreen}>
-          <Icon name="comments" size={24} color="#000" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton}>
-          <Icon name="book" size={24} color="#000" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton}>
-          <Icon name="search" size={24} color="#000" />
-        </TouchableOpacity>
-      </View>
+      <Footer />
 
-      {/* Sidebar Modal */}
-      <Modal
-        transparent={true}
+      <MenuModal
         visible={modalVisible}
-        animationType="none"
-        onRequestClose={closeModal}
-      >
-        <TouchableOpacity style={styles.modalOverlay} onPress={closeModal}>
-          <Animated.View style={[styles.modalContent, { transform: [{ translateX }] }]}>
-            <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
-              <Icon name="bars" size={24} color="#000" />
-            </TouchableOpacity>
-            {menuItems.map((item) => (
-              <TouchableOpacity key={item.id} style={styles.menuItemContainer} onPress={() => handleMenuItemPress(item)}>
-                <Text style={styles.menuItem}>{item.name}</Text>
-                <View style={styles.separator} />
-              </TouchableOpacity>
-            ))}
-          </Animated.View>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* Profile Modal */}
-      <Modal
-        transparent={true}
+        onClose={closeModal}
+        menuItems={menuItems}
+        handleMenuItemPress={handleMenuItemPress}
+      />
+      <ProfileModal
         visible={profileModalVisible}
-        animationType="fade"
-        onRequestClose={closeProfileModal}
-      >
-        <TouchableWithoutFeedback onPress={closeProfileModal}>
-          <View style={styles.overlay} />
-        </TouchableWithoutFeedback>
-        <View style={styles.profileModalOverlay}>
-          <View
-            style={[
-              styles.profileModalTriangle,
-              { top: userIconPosition.y - 10, left: userIconPosition.x + 10 },
-            ]}
-          />
-          <View
-            style={[
-              styles.profileModalContent,
-              { top: userIconPosition.y + 10, left: userIconPosition.x - 160 },
-            ]}
-          >
-            <TouchableOpacity style={styles.profileModalButton} onPress={closeProfileModal}>
-              <Text style={styles.profileModalButtonText}>CERRAR SESIÓN</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.profileModalButton} onPress={navigateToUserDetail}>
-              <Text style={styles.profileModalButtonText}>VER DETALLES</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        onClose={closeProfileModal}
+        userIconPosition={userIconPosition}
+        navigateToUserDetail={navigateToUserDetail}
+      />
     </View>
   );
 };

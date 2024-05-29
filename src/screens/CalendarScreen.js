@@ -1,29 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Button, Platform } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Modal, Animated, Dimensions, TextInput, StyleSheet, Platform } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import Footer from '../components/Footer';
+import MenuModal from '../components/MenuModal';
+import ProfileModal from '../components/ProfileModal';
 
-LocaleConfig.locales['es'] = {
-  monthNames: ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
-  monthNamesShort: ['Ene.','Feb.','Mar','Abr.','May','Jun','Jul.','Ago','Sep.','Oct.','Nov.','Dic.'],
-  dayNames: ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'],
-  dayNamesShort: ['Dom.','Lun.','Mar.','Mié.','Jue.','Vie.','Sáb.'],
-  today: 'Hoy'
-};
-LocaleConfig.defaultLocale = 'es';
+const { width } = Dimensions.get('window');
 
 const CalendarScreen = () => {
   const [markedDates, setMarkedDates] = useState({});
   const [selectedDate, setSelectedDate] = useState('');
-  const [modalVisible, setModalVisible] = useState(false);
   const [note, setNote] = useState('');
   const [notes, setNotes] = useState({});
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [date, setDate] = useState(new Date());
+  const [menuModalVisible, setMenuModalVisible] = useState(false);
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [noteModalVisible, setNoteModalVisible] = useState(false);
+  const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
   const navigation = useNavigation();
+  const userIconRef = useRef(null);
+  const translateX = useRef(new Animated.Value(-width)).current;
   const today = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
@@ -58,12 +59,12 @@ const CalendarScreen = () => {
     } else {
       setNote('');
     }
-    setModalVisible(true);
+    setNoteModalVisible(true);
   };
 
   const handleAddNote = () => {
     setNotes({ ...notes, [selectedDate]: note });
-    setModalVisible(false);
+    setNoteModalVisible(false);
   };
 
   const handleDateChange = (event, selectedDate) => {
@@ -83,22 +84,74 @@ const CalendarScreen = () => {
     setMarkedDates(newMarkedDates);
   }, [notes]);
 
+  const openMenuModal = () => {
+    setMenuModalVisible(true);
+  };
+
+  const closeMenuModal = () => {
+    setMenuModalVisible(false);
+  };
+
+  const openProfileModal = () => {
+    userIconRef.current.measure((fx, fy, width, height, px, py) => {
+      setUserIconPosition({ x: px, y: py + height });
+      setProfileModalVisible(true);
+    });
+  };
+
+  const closeProfileModal = () => {
+    setProfileModalVisible(false);
+  };
+
+  const openNoteModal = () => {
+    setNoteModalVisible(true);
+  };
+
+  const closeNoteModal = () => {
+    setNoteModalVisible(false);
+  };
+  const closeModal = () => {
+    setNoteModalVisible(false);
+  };
+  const navigateToUserDetail = () => {
+    closeProfileModal();
+    navigation.navigate('UserDetail');
+  };
+  const handleMenuItemPress = (item) => {
+    closeModal();
+    if (item.name === 'DETALLES USUARIO') {
+      navigation.navigate('UserDetail');
+    } else if (item.name === 'MIS CURSOS') {
+      navigation.navigate('UserInterface');
+    } else if (item.name === 'METODO DE PAGO') {
+      navigation.navigate('MetodoPago');
+    }
+  };
+  const menuItems = [
+    { id: 1, name: 'DETALLES USUARIO' },
+    { id: 2, name: 'METODO DE PAGO' },
+    { id: 3, name: 'MIS CURSOS' },
+    { id: 4, name: 'BUSCO PROFE' },
+    { id: 5, name: 'TERMINOS Y CONDICIONES' },
+  ];
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={24} color="#000" />
+        <TouchableOpacity style={styles.menuButton} onPress={openMenuModal}>
+          <Icon name="bars" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.title}>Calendario</Text>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.searchButton}>
+          <TouchableOpacity style={styles.searchButton} onPress={() => navigation.navigate('SearchScreen')}>
             <Icon name="search" size={24} color="#000" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.profileButton}>
+          <TouchableOpacity ref={userIconRef} style={styles.profileButton} onPress={openProfileModal}>
             <Icon name="user" size={24} color="#000" />
           </TouchableOpacity>
         </View>
       </View>
+
       <Calendar
         markedDates={markedDates}
         onDayPress={onDayPress}
@@ -113,17 +166,20 @@ const CalendarScreen = () => {
           textDayHeaderFontWeight: '300',
           textDayFontSize: 16,
           textMonthFontSize: 16,
-          textDayHeaderFontSize: 16
-        }} style={styles.CalendarC}
+          textDayHeaderFontSize: 16,
+        }}
+        style={styles.calendar}
       />
-      <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+
+      <TouchableOpacity style={styles.addButton} onPress={openNoteModal}>
         <Text style={styles.addButtonText}>AGREGAR FECHA</Text>
       </TouchableOpacity>
+
       <Modal
         transparent={true}
-        visible={modalVisible}
+        visible={noteModalVisible}
         animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={closeNoteModal}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -149,12 +205,28 @@ const CalendarScreen = () => {
             <TouchableOpacity style={styles.button} onPress={handleAddNote}>
               <Text style={styles.buttonText}>Guardar</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => setModalVisible(false)}>
+            <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={closeNoteModal}>
               <Text style={styles.buttonText}>Cancelar</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
+
+      <Footer />
+
+      <MenuModal
+        visible={menuModalVisible}
+        onClose={closeMenuModal}
+        menuItems={menuItems}
+        handleMenuItemPress={handleMenuItemPress}
+      />
+
+      <ProfileModal
+        visible={profileModalVisible}
+        onClose={closeProfileModal}
+        userIconPosition={userIconPosition}
+        navigateToUserDetail={navigateToUserDetail}
+      />
     </View>
   );
 };
@@ -163,6 +235,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+    justifyContent: 'space-between',
   },
   header: {
     flexDirection: 'row',
@@ -173,7 +246,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     backgroundColor: '#f8f8f8',
   },
-  backButton: {
+  menuButton: {
     padding: 10,
   },
   title: {
@@ -190,33 +263,35 @@ const styles = StyleSheet.create({
   profileButton: {
     padding: 10,
   },
+  calendar: {
+    margin: 10,
+  },
   addButton: {
-    margin: 16,
-    backgroundColor: '#b56576',
-    padding: 15,
-    borderRadius: 10,
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    margin: 20,
+    borderRadius: 5,
     alignItems: 'center',
   },
   addButtonText: {
     color: '#fff',
-    fontSize: 16,
     fontWeight: 'bold',
   },
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
     width: '80%',
     backgroundColor: '#fff',
-    padding: 20,
     borderRadius: 10,
+    padding: 20,
     alignItems: 'center',
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
   },
@@ -226,39 +301,27 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderWidth: 1,
     borderRadius: 5,
-    marginBottom: 10,
     paddingHorizontal: 10,
-  },
-  datePicker: {
-    width: '100%',
     marginBottom: 20,
   },
   button: {
-    backgroundColor: '#6c757d',
+    backgroundColor: '#4CAF50',
     padding: 10,
+    marginTop: 10,
     borderRadius: 5,
-    width: '100%',
     alignItems: 'center',
-    marginBottom: 20,
-  },
-  cancelButton: {
-    backgroundColor: '#adb5bd',
+    width: '100%',
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
+    fontWeight: 'bold',
   },
-  CalendarC:{
-    paddingTop:'10%',
-    paddingBottom:'10%',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
-    marginTop:'15%',
-    marginLeft:15,
-    marginRight:15,
-
-  }
+  cancelButton: {
+    backgroundColor: '#f44336',
+  },
+  datePicker: {
+    width: '100%',
+  },
 });
 
 export default CalendarScreen;

@@ -1,11 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, TouchableWithoutFeedback, TextInput } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
+import Footer from '../components/Footer';
+import MenuModal from '../components/MenuModal';
+import ProfileModal from '../components/ProfileModal';
 
 const { width } = Dimensions.get('window');
 
-const UserInterface = () => {
+const TeacherInterface = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [fabModalVisible, setFabModalVisible] = useState(false);
@@ -55,6 +58,11 @@ const UserInterface = () => {
     navigation.navigate('UserDetail');
   };
 
+  const navigateToLogin = () => {
+    closeProfileModal();
+    navigation.navigate('LoginScreen');
+  };
+
   const navigateToChatScreen = () => {
     navigation.navigate('ChatScreen');
   };
@@ -64,7 +72,11 @@ const UserInterface = () => {
   };
 
   const navigateToSearchScreen = () => {
-    navigation.navigate('SearchScreen');
+    navigation.navigate('StudentSearchScreen'); // Actualizado para llevar a StudentSearchScreen
+  };
+
+  const navigateToProfesorDetail = () => {
+    navigation.navigate('ProfesorDetail');
   };
 
   const handleMenuItemPress = (item) => {
@@ -75,8 +87,18 @@ const UserInterface = () => {
       navigation.navigate('UserInterface');
     } else if (item.name === 'METODO DE PAGO') {
       navigation.navigate('MetodoPago');
+    } else if (item.name === 'TERMINOS Y CONDICIONES') {
+      navigation.navigate('TerminosyCondiciones');
     }
   };
+
+  const menuItems = [
+    { id: 1, name: 'DETALLES USUARIO' },
+    { id: 2, name: 'METODO DE PAGO' },
+    { id: 3, name: 'MIS CURSOS' },
+    { id: 4, name: 'BUSCO PROFE' },
+    { id: 5, name: 'TERMINOS Y CONDICIONES' },
+  ];
 
   const courses = [
     { id: 1, name: 'MATEMATICAS 1', inscritos: 1 },
@@ -102,80 +124,32 @@ const UserInterface = () => {
       </View>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {courses.map((course) => (
-          <View key={course.id} style={styles.courseCard}>
+          <TouchableOpacity key={course.id} style={styles.courseCard} onPress={navigateToProfesorDetail}>
             <Text style={styles.courseName}>{course.name}</Text>
             <Text style={styles.courseText}>INSCRITOS: {course.inscritos}</Text>
-          </View>
+          </TouchableOpacity>
         ))}
       </ScrollView>
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerButton} onPress={navigateToChatScreen}>
-          <Icon name="comments" size={24} color="#000" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton} onPress={navigateToCalendarScreen}>
-          <Icon name="book" size={24} color="#000" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton}>
-          <Icon name="search" size={24} color="#000" />
-        </TouchableOpacity>
-      </View>
+      <Footer />
 
       <TouchableOpacity style={styles.fab} onPress={openFabModal}>
         <Icon name="plus" size={24} color="#fff" />
       </TouchableOpacity>
 
-      <Modal
-        transparent={true}
+      <MenuModal
         visible={modalVisible}
-        animationType="none"
-        onRequestClose={closeModal}
-      >
-        <TouchableOpacity style={styles.modalOverlay} onPress={closeModal}>
-          <Animated.View style={[styles.modalContent, { transform: [{ translateX }] }]}>
-            <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
-              <Icon name="bars" size={24} color="#000" />
-            </TouchableOpacity>
-            {courses.map((item) => (
-              <TouchableOpacity key={item.id} style={styles.menuItemContainer} onPress={() => handleMenuItemPress(item)}>
-                <Text style={styles.menuItem}>{item.name}</Text>
-                <View style={styles.separator} />
-              </TouchableOpacity>
-            ))}
-          </Animated.View>
-        </TouchableOpacity>
-      </Modal>
+        onClose={closeModal}
+        menuItems={menuItems}
+        handleMenuItemPress={handleMenuItemPress}
+      />
 
-      <Modal
-        transparent={true}
+      <ProfileModal
         visible={profileModalVisible}
-        animationType="fade"
-        onRequestClose={closeProfileModal}
-      >
-        <TouchableWithoutFeedback onPress={closeProfileModal}>
-          <View style={styles.overlay} />
-        </TouchableWithoutFeedback>
-        <View style={styles.profileModalOverlay}>
-          <View
-            style={[
-              styles.profileModalTriangle,
-              { top: userIconPosition.y - 800, left: userIconPosition.x + 10 },
-            ]}
-          />
-          <View
-            style={[
-              styles.profileModalContent,
-              { top: userIconPosition.y - 790, left: userIconPosition.x - 160 },
-            ]}
-          >
-            <TouchableOpacity style={styles.profileModalButton} onPress={() => { /* Implementar funcionalidad de cierre de sesión aquí */ }}>
-              <Text style={styles.profileModalButtonText}>CERRAR SESIÓN</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.profileModalButton} onPress={navigateToUserDetail}>
-              <Text style={styles.profileModalButtonText}>VER DETALLES</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        onClose={closeProfileModal}
+        userIconPosition={userIconPosition}
+        navigateToUserDetail={navigateToUserDetail}
+        navigateToLogin={navigateToLogin}
+      />
 
       <Modal
         transparent={true}
@@ -253,14 +227,14 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     padding: 16,
-    alignItems: 'center', // Centramos el contenido horizontalmente
+    alignItems: 'center',
   },
   courseCard: {
     backgroundColor: '#e0e0e0',
     padding: 20,
     marginBottom: 16,
     borderRadius: 10,
-    width: '90%', // Ajustamos el ancho al 90% de la pantalla
+    width: '90%',
   },
   courseName: {
     fontSize: 16,
@@ -293,76 +267,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-start',
-  },
-  modalContent: {
-    width: '70%',
-    height: '100%',
-    backgroundColor: '#cccccc',
-    padding: 20,
-    paddingTop: 60,
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 20,
-    right: 20,
-  },
-  menuItemContainer: {
-    width: '100%',
-    paddingVertical: 10,
-  },
-  menuItem: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#000',
-    marginTop: 10,
-  },
-  profileModalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  profileModalTriangle: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 10,
-    borderRightWidth: 10,
-    borderBottomWidth: 10,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: '#000',
-    position: 'absolute',
-  },
-  profileModalContent: {
-    width: 200,
-    backgroundColor: '#000',
-    padding: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    position: 'absolute',
-  },
-  profileModalButton: {
-    backgroundColor: '#1E90FF',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    marginVertical: 5,
-  },
-  profileModalButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  overlay: {
-    flex: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0)',
-    height: 700,
-  },
   fabModalOverlay: {
     flex: 1,
     justifyContent: 'center',
@@ -374,6 +278,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 20,
     borderRadius: 10,
+  },
+  closeButton: {
+    alignSelf: 'flex-end',
   },
   label: {
     fontSize: 16,
@@ -401,4 +308,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default UserInterface;
+export default TeacherInterface;

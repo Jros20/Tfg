@@ -1,64 +1,104 @@
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Dimensions, Animated } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import { useNavigation } from '@react-navigation/native';
+import Footer from '../components/Footer';
+import MenuModal from '../components/MenuModal';
+import ProfileModal from '../components/ProfileModal';
 
-const TerminosYCondiciones = () => {
+const { width } = Dimensions.get('window');
+
+const TerminosYCondicionesScreen = () => {
+  const [menuModalVisible, setMenuModalVisible] = useState(false);
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
+  const navigation = useNavigation();
+  const userIconRef = useRef(null);
+  const translateX = useRef(new Animated.Value(-width)).current;
+
+  const openMenuModal = () => {
+    setMenuModalVisible(true);
+  };
+
+  const closeMenuModal = () => {
+    setMenuModalVisible(false);
+  };
+
+  const openProfileModal = () => {
+    userIconRef.current.measure((fx, fy, width, height, px, py) => {
+      setUserIconPosition({ x: px, y: py + height });
+      setProfileModalVisible(true);
+    });
+  };
+
+  const closeProfileModal = () => {
+    setProfileModalVisible(false);
+  };
+
+  const navigateToUserDetail = () => {
+    closeProfileModal();
+    navigation.navigate('UserDetail');
+  };
+
+  const handleMenuItemPress = (item) => {
+    closeMenuModal();
+    if (item.name === 'DETALLES USUARIO') {
+      navigation.navigate('UserDetail');
+    } else if (item.name === 'MIS CURSOS') {
+      navigation.navigate('UserInterface');
+    } else if (item.name === 'METODO DE PAGO') {
+      navigation.navigate('MetodoPago');
+    }
+  };
+
+  const menuItems = [
+    { id: 1, name: 'DETALLES USUARIO' },
+    { id: 2, name: 'METODO DE PAGO' },
+    { id: 3, name: 'MIS CURSOS' },
+    { id: 4, name: 'BUSCO PROFE' },
+    { id: 5, name: 'TERMINOS Y CONDICIONES' },
+  ];
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.menuButton}>
+        <TouchableOpacity style={styles.menuButton} onPress={openMenuModal}>
           <Icon name="bars" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.title}>TERMINOS Y CONDICIONES</Text>
+        <Text style={styles.title}>Términos y Condiciones</Text>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.searchButton}>
+          <TouchableOpacity style={styles.searchButton} onPress={() => navigation.navigate('SearchScreen')}>
             <Icon name="search" size={24} color="#000" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.profileButton}>
+          <TouchableOpacity ref={userIconRef} style={styles.profileButton} onPress={openProfileModal}>
             <Icon name="user" size={24} color="#000" />
           </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.termsContainer}>
-          <Text style={styles.termsText}>
-            Bienvenido/a a nuestros servicios. Por favor, lee atentamente los siguientes términos y condiciones antes de utilizar nuestros productos o servicios.
-          </Text>
-          <Text style={styles.termsTitle}>1. Aceptación de los Términos:</Text>
-          <Text style={styles.termsText}>
-            Al acceder o utilizar nuestros servicios, acepta cumplir estos términos y condiciones. Si no estás de acuerdo con alguno de los términos, por favor, no utilices nuestros servicios.
-          </Text>
-          <Text style={styles.termsTitle}>2. Uso de los Servicios:</Text>
-          <Text style={styles.termsText}>
-            Nuestros servicios están destinados para uso personal y no comercial. No debes utilizar nuestros servicios de manera indebida o para fines ilegales.
-          </Text>
-          <Text style={styles.termsTitle}>3. Propiedad Intelectual:</Text>
-          <Text style={styles.termsText}>
-            Todos los derechos de propiedad intelectual de nuestros servicios son propiedad de nuestra empresa. No tienes derecho a utilizar nuestras marcas, logos, o contenido sin autorización previa por escrito.
-          </Text>
-          <Text style={styles.termsTitle}>4. Privacidad:</Text>
-          <Text style={styles.termsText}>
-            Respetamos tu privacidad. Para obtener más información sobre cómo recopilamos, utilizamos y protegemos tus datos personales, consulta nuestra política de privacidad.
-          </Text>
-          <Text style={styles.termsTitle}>5. Limitación de Responsabilidad:</Text>
-          <Text style={styles.termsText}>
-            No nos ....
+      <View style={styles.content}>
+        <View style={styles.textBox}>
+          <Text style={styles.text}>
+            Aquí van los términos y condiciones...
           </Text>
         </View>
-      </ScrollView>
-
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerButton}>
-          <Icon name="comments" size={24} color="#000" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton}>
-          <Icon name="book" size={24} color="#000" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton}>
-          <Icon name="search" size={24} color="#000" />
-        </TouchableOpacity>
       </View>
+
+      <Footer />
+
+      <MenuModal
+        visible={menuModalVisible}
+        onClose={closeMenuModal}
+        menuItems={menuItems}
+        handleMenuItemPress={handleMenuItemPress}
+      />
+
+      <ProfileModal
+        visible={profileModalVisible}
+        onClose={closeProfileModal}
+        userIconPosition={userIconPosition}
+        navigateToUserDetail={navigateToUserDetail}
+      />
     </View>
   );
 };
@@ -67,6 +107,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+    justifyContent: 'space-between',
   },
   header: {
     flexDirection: 'row',
@@ -94,35 +135,21 @@ const styles = StyleSheet.create({
   profileButton: {
     padding: 10,
   },
-  scrollContainer: {
-    padding: 16,
+  content: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  termsContainer: {
-    backgroundColor: '#e0e0e0',
+  textBox: {
+    backgroundColor: '#f0f0f0',
     padding: 20,
     borderRadius: 10,
+    width: '100%',
   },
-  termsTitle: {
+  text: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 10,
-  },
-  termsText: {
-    fontSize: 14,
-    marginTop: 5,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    padding: 16,
-    borderTopWidth: 1,
-    borderColor: '#e0e0e0',
-    backgroundColor: '#f8f8f8',
-  },
-  footerButton: {
-    padding: 10,
   },
 });
 
-export default TerminosYCondiciones;
+export default TerminosYCondicionesScreen;

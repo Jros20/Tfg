@@ -51,18 +51,18 @@ const CoursesScreen = () => {
     setMenuModalVisible(false);
   };
   const handleMenuItemPress = (item) => {
-    closeModal();
+    closeMenuModal();
     if (item.name === 'DETALLES USUARIO') {
       navigation.navigate('UserDetail');
     } else if (item.name === 'MIS CURSOS') {
       navigation.navigate('UserInterface');
     } else if (item.name === 'METODO DE PAGO') {
       navigation.navigate('MetodoPago');
+    }else if (item.name === 'TERMINOS Y CONDICIONES') {
+      navigation.navigate('TerminosyCondiciones');
     }
   };
-  const closeModal = () => {
-    setNoteModalVisible(false);
-  };
+ 
   const menuItems = [
     { id: 1, name: 'DETALLES USUARIO' },
     { id: 2, name: 'METODO DE PAGO' },

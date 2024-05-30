@@ -1,7 +1,22 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet, TouchableWithoutFeedback } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
-const ProfileModal = ({ visible, onClose, userIconPosition, navigateToUserDetail }) => {
+const ProfileModal = ({ visible, onClose, userIconPosition }) => {
+  const navigation = useNavigation();
+
+  const handleLogout = () => {
+    // Navegar a la pantalla de inicio de sesión al cerrar sesión
+    navigation.navigate('Home');
+    onClose(); // Cerrar el modal después de navegar
+  };
+
+  const handleNavigateToUserDetail = () => {
+    // Navegar a la pantalla de detalles del usuario
+    navigation.navigate('UserDetail');
+    onClose(); // Cerrar el modal después de navegar
+  };
+
   return (
     <Modal transparent={true} visible={visible} animationType="fade" onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
@@ -20,10 +35,10 @@ const ProfileModal = ({ visible, onClose, userIconPosition, navigateToUserDetail
             { top: userIconPosition.y - 790, left: userIconPosition.x - 160 },
           ]}
         >
-          <TouchableOpacity style={styles.profileModalButton} onPress={() => { /* Implementar funcionalidad de cierre de sesión aquí */ }}>
+          <TouchableOpacity style={styles.profileModalButton} onPress={handleLogout}>
             <Text style={styles.profileModalButtonText}>CERRAR SESIÓN</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.profileModalButton} onPress={navigateToUserDetail}>
+          <TouchableOpacity style={styles.profileModalButton} onPress={handleNavigateToUserDetail}>
             <Text style={styles.profileModalButtonText}>VER DETALLES</Text>
           </TouchableOpacity>
         </View>

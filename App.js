@@ -12,6 +12,7 @@ import TeacherInterface from './src/screens/TeacherInterface';
 import ProfesorDetail from './src/screens/ProfesorDetail';
 import ClaseDetail from './src/screens/ClaseDetail';
 import TerminosyCondiciones from './src/screens/TerminosyCondiciones'; // Importa el nuevo componente
+import StudentSearchScreen from './src/screens/StudentSearchScreen'; // Importa el nuevo componente
 
 
 import { NavigationContainer } from '@react-navigation/native';
@@ -36,6 +37,7 @@ export default function App() {
         <Stack.Screen name="ProfesorDetail" component={ProfesorDetail} options={{ headerShown: false }} />
         <Stack.Screen name="ClaseDetail" component={ClaseDetail} options={{ headerShown: false }} />
         <Stack.Screen name="TerminosyCondiciones" component={TerminosyCondiciones} options={{ headerShown: false }}/> 
+        <Stack.Screen name="StudentSearchScreen" component={StudentSearchScreen} options={{ headerShown: false }}/> 
 
 
       </Stack.Navigator>

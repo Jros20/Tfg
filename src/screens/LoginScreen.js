@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Modal } from 'react-native';
-import { AntDesign } from '@expo/vector-icons'; // Asegúrate de tener instalada la biblioteca de iconos
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Modal, Alert } from 'react-native';
+import { AntDesign } from '@expo/vector-icons'; 
 import Animated, { Easing, useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
-import { useNavigation } from '@react-navigation/native'; // Importamos useNavigation
+import { useNavigation } from '@react-navigation/native';
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from '../utils/firebase';
 
 const LoginScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const opacity = useSharedValue(0);
-  const navigation = useNavigation(); // Obtenemos la navegación
+  const navigation = useNavigation();
 
   const openModal = () => {
     setModalVisible(true);
@@ -23,15 +28,17 @@ const LoginScreen = () => {
     opacity: opacity.value,
   }));
 
-  const handleStudentPress = () => {
-    navigation.navigate('UserInterface');
-    closeModal();
+  const handleRegister = async (role) => {
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      // Aquí podrías añadir lógica adicional para guardar el rol (alumno o profesor)
+      Alert.alert('Registro exitoso', `Usuario registrado como ${role}`);
+      closeModal();
+    } catch (error) {
+      Alert.alert('Error de registro', error.message);
+    }
   };
 
-  const handleTeacherPress = () => {
-    navigation.navigate('TeacherInterface');
-    closeModal();
-  };
   return (
     <View style={styles.container}>
       <View style={styles.containercenter}>
@@ -48,7 +55,7 @@ const LoginScreen = () => {
           secureTextEntry
         />
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.registerButton}  onPress={openModal}>
+          <TouchableOpacity style={styles.registerButton} onPress={openModal}>
             <Text style={styles.buttonTextRegister}>Register</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.loginButton}>
@@ -60,13 +67,13 @@ const LoginScreen = () => {
       <Modal
         transparent={true}
         visible={modalVisible}
-        onRequestClose={closeModal} 
+        onRequestClose={closeModal}
       >
         <View style={styles.modalContainer}>
           <Animated.View style={[styles.modalContent, animatedStyle]}>
             <TouchableOpacity
               style={styles.closeButton}
-              onPress={closeModal} 
+              onPress={closeModal}
             >
               <AntDesign name="close" size={24} color="black" />
             </TouchableOpacity>
@@ -76,6 +83,8 @@ const LoginScreen = () => {
               style={styles.modalInput}
               placeholder="Enter your name"
               placeholderTextColor="#666"
+              value={name}
+              onChangeText={setName}
             />
 
             <Text style={styles.label}>CONTRASEÑA</Text>
@@ -84,6 +93,8 @@ const LoginScreen = () => {
               placeholder="Enter your password..."
               placeholderTextColor="#666"
               secureTextEntry
+              value={password}
+              onChangeText={setPassword}
             />
 
             <Text style={styles.label}>CORREO ELECTRÓNICO</Text>
@@ -91,15 +102,17 @@ const LoginScreen = () => {
               style={styles.modalInput}
               placeholder="Enter your email"
               placeholderTextColor="#666"
+              value={email}
+              onChangeText={setEmail}
             />
 
             <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.studentButton} onPress={handleStudentPress}>
-              <Text style={styles.buttonTextStudent}>ALUMNO</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.teacherButton} onPress={handleTeacherPress}>
-              <Text style={styles.buttonTextTeacher}>PROFESOR</Text>
-            </TouchableOpacity>
+              <TouchableOpacity style={styles.studentButton} onPress={() => handleRegister('ALUMNO')}>
+                <Text style={styles.buttonTextStudent}>ALUMNO</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.teacherButton} onPress={() => handleRegister('PROFESOR')}>
+                <Text style={styles.buttonTextTeacher}>PROFESOR</Text>
+              </TouchableOpacity>
             </View>
           </Animated.View>
         </View>
@@ -107,7 +120,6 @@ const LoginScreen = () => {
     </View>
   );
 };
-
 
 
 const styles = StyleSheet.create({

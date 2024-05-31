@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "804901845585",
+    "project_id": "classappf",
+    "storage_bucket": "classappf.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:804901845585:android:8af3cba6504a3996081670",
+        "android_client_info": {
+          "package_name": "com.juananprofe.classapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCTGqE0dJOUpkukJ6ECAuzZDXUW-1kcEkE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Modal, Aler
 import { AntDesign } from '@expo/vector-icons'; 
 import Animated, { Easing, useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from '../utils/firebase';
 
 const LoginScreen = () => {
@@ -39,26 +39,41 @@ const LoginScreen = () => {
     }
   };
 
+  const handleLogin = async () => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      Alert.alert('Inicio de sesión exitoso', `Bienvenido ${email}`);
+      // Navegar a la pantalla principal de la aplicación
+      navigation.navigate('UserInterface'); // Asegúrate de tener configurada esta navegación
+    } catch (error) {
+      Alert.alert('Error de inicio de sesión', error.message);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.containercenter}>
         <Image source={require('../assets/logo.png')} style={styles.logo} />
         <TextInput
           style={styles.input}
-          placeholder="Enter your username"
+          placeholder="Enter your email"
           placeholderTextColor="#666"
+          value={email}
+          onChangeText={setEmail}
         />
         <TextInput
           style={styles.input}
           placeholder="Enter your password"
           placeholderTextColor="#666"
           secureTextEntry
+          value={password}
+          onChangeText={setPassword}
         />
         <View style={styles.buttonContainer}>
           <TouchableOpacity style={styles.registerButton} onPress={openModal}>
             <Text style={styles.buttonTextRegister}>Register</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.loginButton}>
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
             <Text style={styles.buttonTextLogin}>Login</Text>
           </TouchableOpacity>
         </View>
@@ -120,7 +135,6 @@ const LoginScreen = () => {
     </View>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {

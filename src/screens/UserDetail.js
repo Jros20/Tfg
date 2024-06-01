@@ -179,7 +179,11 @@ const UserDetail = () => {
             <Icon name="search" size={24} color="#000" />
           </TouchableOpacity>
           <TouchableOpacity ref={userIconRef} style={styles.profileButton} onPress={openProfileModal}>
-            <Icon name="user" size={24} color="#000" />
+            {profileImage ? (
+              <Image source={{ uri: profileImage }} style={styles.profileImageHeader} />
+            ) : (
+              <Icon name="user" size={24} color="#000" />
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -275,6 +279,11 @@ const styles = StyleSheet.create({
   },
   profileButton: {
     padding: 10,
+  },
+  profileImageHeader: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
   },
   containerInside: {
     flex: 1,

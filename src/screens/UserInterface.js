@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity, Text, Image, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import Footer from '../components/Footer';
@@ -15,6 +15,7 @@ const UserInterface = () => {
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [infoModalVisible, setInfoModalVisible] = useState(false);
   const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
+  const [profileImage, setProfileImage] = useState(null);
   const userIconRef = useRef(null);
   const navigation = useNavigation();
 
@@ -32,8 +33,23 @@ const UserInterface = () => {
     }
   };
 
+  const fetchUserProfileImage = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.profileImage) {
+          setProfileImage(userData.profileImage);
+        }
+      }
+    }
+  };
+
   useEffect(() => {
     checkStudentInfo();
+    fetchUserProfileImage();
   }, []);
 
   const openModal = () => setModalVisible(true);
@@ -84,7 +100,11 @@ const UserInterface = () => {
             <Icon name="search" size={24} color="#000" />
           </TouchableOpacity>
           <TouchableOpacity ref={userIconRef} style={styles.profileButton} onPress={openProfileModal}>
-            <Icon name="user" size={24} color="#000" />
+            {profileImage ? (
+              <Image source={{ uri: profileImage }} style={styles.profileImage} />
+            ) : (
+              <Icon name="user" size={24} color="#000" />
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -152,6 +172,11 @@ const styles = StyleSheet.create({
   },
   profileButton: {
     padding: 10,
+  },
+  profileImage: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
   },
   scrollContainer: {
     padding: 16,

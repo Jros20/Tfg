@@ -7,6 +7,7 @@ import MenuModal from '../components/MenuModal';
 import ProfileModal from '../components/ProfileModal';
 import FabModal from '../components/FabModal';
 import CourseCard from '../components/CourseCard';
+import { doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../utils/firebase';
 import Curso from '../model/Curso';
 

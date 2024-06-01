@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { doc, getDoc, query, where, getDocs, collection } from 'firebase/firestore';
+import { useNavigation } from '@react-navigation/native';  // Importa useNavigation
 import { db } from '../utils/firebase';
 
 const CourseCard = ({ course }) => {
   const [categoryName, setCategoryName] = useState('');
   const [enrollmentCount, setEnrollmentCount] = useState(0);
+  const navigation = useNavigation();  // Usa el hook useNavigation
 
   useEffect(() => {
     const fetchCategoryName = async () => {
@@ -36,8 +38,12 @@ const CourseCard = ({ course }) => {
     fetchEnrollmentCount();
   }, [course.categoryId, course.id]);
 
+  const handlePress = () => {
+    navigation.navigate('ProfesorDetail', { courseId: course.id });  // Navega a ClaseDetail con el ID del curso
+  };
+
   return (
-    <View key={course.id} style={styles.courseCard}>
+    <TouchableOpacity key={course.id} style={styles.courseCard} onPress={handlePress}>
       <Image source={{ uri: course.imageUrl }} style={styles.courseImage} />
       <View style={styles.courseDetails}>
         <Text style={styles.courseName}>{course.courseName}</Text>
@@ -46,7 +52,7 @@ const CourseCard = ({ course }) => {
         <Text style={styles.courseCategory}>Categoría: {categoryName}</Text>
         <Text style={styles.enrollmentCount}>Inscritos: {enrollmentCount}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 

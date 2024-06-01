@@ -1,10 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, TouchableWithoutFeedback, TextInput } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import Footer from '../components/Footer';
 import MenuModal from '../components/MenuModal';
 import ProfileModal from '../components/ProfileModal';
+import TeacherInfoModal from '../components/TeacherInfoModal';
+import { doc, getDoc } from 'firebase/firestore';
+import { db, auth } from '../utils/firebase';
 
 const { width } = Dimensions.get('window');
 
@@ -12,10 +15,29 @@ const TeacherInterface = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [fabModalVisible, setFabModalVisible] = useState(false);
+  const [infoModalVisible, setInfoModalVisible] = useState(false);
   const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
   const translateX = useRef(new Animated.Value(-width)).current;
   const userIconRef = useRef(null);
   const navigation = useNavigation();
+
+  const checkTutorInfo = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      const tutorDocRef = doc(db, 'Tutores', user.uid);
+      const tutorDoc = await getDoc(tutorDocRef);
+
+      if (!tutorDoc.exists() || !tutorDoc.data().edad || !tutorDoc.data().telefono || !tutorDoc.data().tarifas || !tutorDoc.data().especializaciones) {
+        setInfoModalVisible(true);
+      } else {
+        setInfoModalVisible(false); // Asegurarse de que el modal no esté visible si la información ya está completa
+      }
+    }
+  };
+
+  useEffect(() => {
+    checkTutorInfo();
+  }, []);
 
   const openModal = () => {
     setModalVisible(true);
@@ -149,6 +171,15 @@ const TeacherInterface = () => {
         userIconPosition={userIconPosition}
         navigateToUserDetail={navigateToUserDetail}
         navigateToLogin={navigateToLogin}
+      />
+
+      <TeacherInfoModal
+        visible={infoModalVisible}
+        onClose={() => setInfoModalVisible(false)}
+        onSave={() => {
+          setInfoModalVisible(false);
+          navigation.navigate('TeacherInterface');
+        }}
       />
 
       <Modal

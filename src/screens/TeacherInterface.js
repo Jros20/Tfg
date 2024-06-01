@@ -38,15 +38,15 @@ const TeacherInterface = () => {
     fetchProfileImage();
   }, []);
 
-  const fetchCourses = async () => {
-    const user = auth.currentUser;
-    if (user) {
-      const fetchedCourses = await Curso.getCoursesByTutor(user.uid);
-      setCourses(fetchedCourses);
-    }
-  };
-
   useEffect(() => {
+    const fetchCourses = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const fetchedCourses = await Curso.getCoursesByTutor(user.uid);
+        setCourses(fetchedCourses);
+      }
+    };
+
     fetchCourses();
   }, []);
 
@@ -184,7 +184,8 @@ const TeacherInterface = () => {
         onClose={closeFabModal}
         onSave={() => {
           setFabModalVisible(false);
-          fetchCourses(); // Actualizar la lista de cursos después de guardar
+          // Actualizar la lista de cursos después de guardar
+          fetchCourses();
         }}
       />
     </View>
@@ -268,45 +269,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  fabModalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  fabModalContent: {
-    width: '80%',
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
-  },
-  closeButton: {
-    alignSelf: 'flex-end',
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  modalInput: {
-    width: '100%',
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    marginBottom: 20,
-  },
-  publishButton: {
-    width: '100%',
-    backgroundColor: '#000',
-    borderRadius: 5,
-    paddingVertical: 10,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  buttonTextPublish: {
-    color: '#fff',
   },
 });
 

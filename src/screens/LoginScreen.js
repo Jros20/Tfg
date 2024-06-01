@@ -5,8 +5,11 @@ import Animated, { Easing, useSharedValue, useAnimatedStyle, withTiming } from '
 import { useNavigation } from '@react-navigation/native';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../utils/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { auth, db, storage } from '../utils/firebase';
 import User from '../model/User';
+
+const DEFAULT_PROFILE_PICTURE = require('../assets/img/default-profile-picture.png');
 
 const LoginScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -31,6 +34,22 @@ const LoginScreen = () => {
     opacity: opacity.value,
   }));
 
+  const uploadDefaultImage = async (uid) => {
+    try {
+      const response = await fetch(Image.resolveAssetSource(DEFAULT_PROFILE_PICTURE).uri);
+      const blob = await response.blob();
+
+      const storageRef = ref(storage, `profilePictures/${uid}.jpg`);
+      await uploadBytes(storageRef, blob);
+
+      const downloadURL = await getDownloadURL(storageRef);
+      return downloadURL;
+    } catch (error) {
+      console.error("Error uploading default image: ", error);
+      throw error;
+    }
+  };
+
   const handleRegister = async (role) => {
     if (!email || !password || !name) {
       Alert.alert('Error de registro', 'Todos los campos son obligatorios.');
@@ -41,8 +60,11 @@ const LoginScreen = () => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      // Subir la imagen por defecto
+      const profilePictureUrl = await uploadDefaultImage(user.uid);
+
       // Crear un nuevo usuario usando la clase User
-      const newUser = new User(user.uid, name, email, role);
+      const newUser = new User(user.uid, name, email, role, profilePictureUrl);
 
       // Guardar información del usuario en Firestore
       await setDoc(doc(db, 'users', user.uid), newUser.toFirestore());

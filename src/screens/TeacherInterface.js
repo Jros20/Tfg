@@ -1,5 +1,4 @@
-// TeacherInterface.js
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated, Dimensions, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
@@ -7,8 +6,9 @@ import Footer from '../components/Footer';
 import MenuModal from '../components/MenuModal';
 import ProfileModal from '../components/ProfileModal';
 import FabModal from '../components/FabModal';
-import { doc, getDoc } from 'firebase/firestore';
+import CourseCard from '../components/CourseCard';
 import { db, auth } from '../utils/firebase';
+import Curso from '../model/Curso';
 
 const { width } = Dimensions.get('window');
 
@@ -16,6 +16,7 @@ const TeacherInterface = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [fabModalVisible, setFabModalVisible] = useState(false);
+  const [courses, setCourses] = useState([]);
   const [profileImage, setProfileImage] = useState(null);
   const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
   const translateX = useRef(new Animated.Value(-width)).current;
@@ -35,6 +36,18 @@ const TeacherInterface = () => {
     };
 
     fetchProfileImage();
+  }, []);
+
+  const fetchCourses = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      const fetchedCourses = await Curso.getCoursesByTutor(user.uid);
+      setCourses(fetchedCourses);
+    }
+  };
+
+  useEffect(() => {
+    fetchCourses();
   }, []);
 
   const openModal = () => {
@@ -120,12 +133,6 @@ const TeacherInterface = () => {
     { id: 5, name: 'TERMINOS Y CONDICIONES' },
   ];
 
-  const courses = [
-    { id: 1, name: 'MATEMATICAS 1', inscritos: 1 },
-    { id: 2, name: 'MATEMATICAS 2', inscritos: 1 },
-    { id: 3, name: 'MATEMATICAS 3', inscritos: 1 },
-  ];
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -148,10 +155,7 @@ const TeacherInterface = () => {
       </View>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {courses.map((course) => (
-          <TouchableOpacity key={course.id} style={styles.courseCard} onPress={navigateToProfesorDetail}>
-            <Text style={styles.courseName}>{course.name}</Text>
-            <Text style={styles.courseText}>INSCRITOS: {course.inscritos}</Text>
-          </TouchableOpacity>
+          <CourseCard key={course.id} course={course} />
         ))}
       </ScrollView>
       <Footer />
@@ -178,6 +182,10 @@ const TeacherInterface = () => {
       <FabModal
         visible={fabModalVisible}
         onClose={closeFabModal}
+        onSave={() => {
+          setFabModalVisible(false);
+          fetchCourses(); // Actualizar la lista de cursos después de guardar
+        }}
       />
     </View>
   );
@@ -260,6 +268,45 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  fabModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  fabModalContent: {
+    width: '80%',
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+  },
+  closeButton: {
+    alignSelf: 'flex-end',
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalInput: {
+    width: '100%',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    marginBottom: 20,
+  },
+  publishButton: {
+    width: '100%',
+    backgroundColor: '#000',
+    borderRadius: 5,
+    paddingVertical: 10,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  buttonTextPublish: {
+    color: '#fff',
   },
 });
 

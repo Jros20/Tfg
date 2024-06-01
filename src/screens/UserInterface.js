@@ -18,19 +18,21 @@ const UserInterface = () => {
   const userIconRef = useRef(null);
   const navigation = useNavigation();
 
-  useEffect(() => {
-    const checkStudentInfo = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        const studentDocRef = doc(db, 'Estudiantes', user.uid);
-        const studentDoc = await getDoc(studentDocRef);
+  const checkStudentInfo = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      const studentDocRef = doc(db, 'Estudiantes', user.uid);
+      const studentDoc = await getDoc(studentDocRef);
 
-        if (!studentDoc.exists() || !studentDoc.data().edad || !studentDoc.data().telefono || !studentDoc.data().intereses) {
-          setInfoModalVisible(true);
-        }
+      if (!studentDoc.exists() || !studentDoc.data().edad || !studentDoc.data().telefono || !studentDoc.data().intereses) {
+        setInfoModalVisible(true);
+      } else {
+        setInfoModalVisible(false); // Asegurarse de que el modal no esté visible si la información ya está completa
       }
-    };
+    }
+  };
 
+  useEffect(() => {
     checkStudentInfo();
   }, []);
 
@@ -111,6 +113,10 @@ const UserInterface = () => {
       <StudentInfoModal
         visible={infoModalVisible}
         onClose={() => setInfoModalVisible(false)}
+        onSave={() => {
+          setInfoModalVisible(false);
+          navigation.navigate('UserInterface');
+        }}
       />
     </View>
   );

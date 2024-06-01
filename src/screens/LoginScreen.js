@@ -4,13 +4,16 @@ import { AntDesign } from '@expo/vector-icons';
 import Animated, { Easing, useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from '../utils/firebase';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../utils/firebase';
+import User from '../model/User';
 
 const LoginScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [role, setRole] = useState('');
   const opacity = useSharedValue(0);
   const navigation = useNavigation();
 
@@ -29,9 +32,21 @@ const LoginScreen = () => {
   }));
 
   const handleRegister = async (role) => {
+    if (!email || !password || !name) {
+      Alert.alert('Error de registro', 'Todos los campos son obligatorios.');
+      return;
+    }
+
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      // Aquí podrías añadir lógica adicional para guardar el rol (alumno o profesor)
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Crear un nuevo usuario usando la clase User
+      const newUser = new User(user.uid, name, email, role);
+
+      // Guardar información del usuario en Firestore
+      await setDoc(doc(db, 'users', user.uid), newUser.toFirestore());
+
       Alert.alert('Registro exitoso', `Usuario registrado como ${role}`);
       closeModal();
     } catch (error) {
@@ -40,11 +55,29 @@ const LoginScreen = () => {
   };
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error de inicio de sesión', 'Por favor ingrese el correo electrónico y la contraseña.');
+      return;
+    }
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      Alert.alert('Inicio de sesión exitoso', `Bienvenido ${email}`);
-      // Navegar a la pantalla principal de la aplicación
-      navigation.navigate('UserInterface'); // Asegúrate de tener configurada esta navegación
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Obtener el documento del usuario desde Firestore
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.role === 'PROFESOR') {
+          navigation.navigate('TeacherInterface'); // Redirigir a la pantalla del profesor
+        } else if (userData.role === 'ALUMNO') {
+          navigation.navigate('UserInterface'); // Redirigir a la pantalla del alumno
+        } else {
+          Alert.alert('Error', 'Rol no reconocido.');
+        }
+      } else {
+        Alert.alert('Error', 'El usuario no tiene un perfil registrado.');
+      }
     } catch (error) {
       Alert.alert('Error de inicio de sesión', error.message);
     }
@@ -122,10 +155,16 @@ const LoginScreen = () => {
             />
 
             <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.studentButton} onPress={() => handleRegister('ALUMNO')}>
+              <TouchableOpacity style={styles.studentButton} onPress={() => {
+                setRole('ALUMNO');
+                handleRegister('ALUMNO');
+              }}>
                 <Text style={styles.buttonTextStudent}>ALUMNO</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.teacherButton} onPress={() => handleRegister('PROFESOR')}>
+              <TouchableOpacity style={styles.teacherButton} onPress={() => {
+                setRole('PROFESOR');
+                handleRegister('PROFESOR');
+              }}>
                 <Text style={styles.buttonTextTeacher}>PROFESOR</Text>
               </TouchableOpacity>
             </View>
@@ -201,7 +240,6 @@ const styles = StyleSheet.create({
     marginStart:'5%',
     height:'90%',
     marginBottom:'20%'
-
   },
   modalContent: {
     width: '80%',
@@ -233,7 +271,6 @@ const styles = StyleSheet.create({
   modalInput: {
     width: '100%',
     height: 40,
-
     borderColor: '#fff',
     borderWidth: 1,
     borderRadius: 5,

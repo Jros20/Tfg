@@ -6,7 +6,7 @@ class User {
       this.role = role;
     }
   
-    toDatabase() {
+    toFirestore() {
       return {
         uid: this.uid,
         name: this.name,
@@ -15,8 +15,9 @@ class User {
       };
     }
   
-    static fromDatabase(data) {
-      return new User(data.uid, data.name, data.email, data.role);
+    static fromFirestore(snapshot) {
+      const data = snapshot.data();
+      return new User(snapshot.id, data.name, data.email, data.role);
     }
   }
   

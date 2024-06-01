@@ -1,11 +1,12 @@
+// TeacherInterface.js
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, TouchableWithoutFeedback, TextInput } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated, Dimensions, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import Footer from '../components/Footer';
 import MenuModal from '../components/MenuModal';
 import ProfileModal from '../components/ProfileModal';
-import TeacherInfoModal from '../components/TeacherInfoModal';
+import FabModal from '../components/FabModal';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../utils/firebase';
 
@@ -15,28 +16,25 @@ const TeacherInterface = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [fabModalVisible, setFabModalVisible] = useState(false);
-  const [infoModalVisible, setInfoModalVisible] = useState(false);
+  const [profileImage, setProfileImage] = useState(null);
   const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
   const translateX = useRef(new Animated.Value(-width)).current;
   const userIconRef = useRef(null);
   const navigation = useNavigation();
 
-  const checkTutorInfo = async () => {
-    const user = auth.currentUser;
-    if (user) {
-      const tutorDocRef = doc(db, 'Tutores', user.uid);
-      const tutorDoc = await getDoc(tutorDocRef);
-
-      if (!tutorDoc.exists() || !tutorDoc.data().edad || !tutorDoc.data().telefono || !tutorDoc.data().tarifas || !tutorDoc.data().especializaciones) {
-        setInfoModalVisible(true);
-      } else {
-        setInfoModalVisible(false); // Asegurarse de que el modal no esté visible si la información ya está completa
-      }
-    }
-  };
-
   useEffect(() => {
-    checkTutorInfo();
+    const fetchProfileImage = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists() && userDoc.data().profileImage) {
+          setProfileImage(userDoc.data().profileImage);
+        }
+      }
+    };
+
+    fetchProfileImage();
   }, []);
 
   const openModal = () => {
@@ -106,7 +104,7 @@ const TeacherInterface = () => {
       closeModal();
       navigation.navigate('UserDetail');
     } else if (item.name === 'MIS CURSOS') {
-      navigation.navigate('UserInterface');
+      navigation.navigate('TeacherInterface');
     } else if (item.name === 'METODO DE PAGO') {
       navigation.navigate('MetodoPago');
     } else if (item.name === 'TERMINOS Y CONDICIONES') {
@@ -140,7 +138,11 @@ const TeacherInterface = () => {
             <Icon name="search" size={24} color="#000" />
           </TouchableOpacity>
           <TouchableOpacity ref={userIconRef} style={styles.profileButton} onPress={openProfileModal}>
-            <Icon name="user" size={24} color="#000" />
+            {profileImage ? (
+              <Image source={{ uri: profileImage }} style={styles.profileImage} />
+            ) : (
+              <Icon name="user" size={24} color="#000" />
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -173,54 +175,10 @@ const TeacherInterface = () => {
         navigateToLogin={navigateToLogin}
       />
 
-      <TeacherInfoModal
-        visible={infoModalVisible}
-        onClose={() => setInfoModalVisible(false)}
-        onSave={() => {
-          setInfoModalVisible(false);
-          navigation.navigate('TeacherInterface');
-        }}
-      />
-
-      <Modal
-        transparent={true}
+      <FabModal
         visible={fabModalVisible}
-        animationType="slide"
-        onRequestClose={closeFabModal}
-      >
-        <View style={styles.fabModalOverlay}>
-          <View style={styles.fabModalContent}>
-            <TouchableOpacity style={styles.closeButton} onPress={closeFabModal}>
-              <Icon name="close" size={24} color="#000" />
-            </TouchableOpacity>
-
-            <Text style={styles.label}>DESCRIPCIÓN</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Enter your description"
-              placeholderTextColor="#666"
-            />
-
-            <Text style={styles.label}>CATEGORÍA</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Enter your category"
-              placeholderTextColor="#666"
-            />
-
-            <Text style={styles.label}>IMAGEN</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Enter your image"
-              placeholderTextColor="#666"
-            />
-
-            <TouchableOpacity style={styles.publishButton}>
-              <Text style={styles.buttonTextPublish}>PUBLICAR</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        onClose={closeFabModal}
+      />
     </View>
   );
 };
@@ -256,6 +214,11 @@ const styles = StyleSheet.create({
   profileButton: {
     padding: 10,
   },
+  profileImage: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
   scrollContainer: {
     padding: 16,
     alignItems: 'center',
@@ -289,7 +252,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 80, // Movido hacia arriba
     right: 20,
     width: 60,
     height: 60,
@@ -297,45 +260,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  fabModalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  fabModalContent: {
-    width: '80%',
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
-  },
-  closeButton: {
-    alignSelf: 'flex-end',
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  modalInput: {
-    width: '100%',
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    marginBottom: 20,
-  },
-  publishButton: {
-    width: '100%',
-    backgroundColor: '#000',
-    borderRadius: 5,
-    paddingVertical: 10,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  buttonTextPublish: {
-    color: '#fff',
   },
 });
 

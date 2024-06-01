@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, Image, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../utils/firebase';
+import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
+import { auth, db, storage } from '../utils/firebase';
 import { updatePassword } from 'firebase/auth';
+import * as ImagePicker from 'expo-image-picker';
 import Footer from '../components/Footer';
 import MenuModal from '../components/MenuModal';
 import ProfileModal from '../components/ProfileModal';
@@ -17,6 +19,8 @@ const UserDetail = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [profileImage, setProfileImage] = useState('');
+  const [loading, setLoading] = useState(false);
   const userIconRef = useRef(null);
   const navigation = useNavigation();
 
@@ -67,6 +71,9 @@ const UserDetail = () => {
           const userData = userDoc.data();
           setName(userData.name);
           setEmail(userData.email);
+          if (userData.profileImage) {
+            setProfileImage(userData.profileImage);
+          }
         }
       }
     };
@@ -92,6 +99,7 @@ const UserDetail = () => {
       const userDocRef = doc(db, 'users', user.uid);
       await setDoc(userDocRef, {
         name,
+        profileImage,
       }, { merge: true });
 
       Alert.alert('Éxito', 'Información actualizada correctamente');
@@ -99,6 +107,63 @@ const UserDetail = () => {
     } catch (error) {
       Alert.alert('Error', 'No se pudo actualizar la información');
       console.error('Error al actualizar la información del usuario:', error);
+    }
+  };
+
+  const pickImage = async () => {
+    // Pedir permisos para acceder a la galería
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Se requiere permiso para acceder a la galería');
+      return;
+    }
+
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const { uri } = result.assets[0];
+      const user = auth.currentUser;
+      const storageRef = ref(storage, `profileImages/${user.uid}`);
+      setLoading(true);
+      try {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+
+        const uploadTask = uploadBytesResumable(storageRef, blob);
+
+        uploadTask.on(
+          'state_changed',
+          (snapshot) => {
+            // Puedes mostrar el progreso de la subida si lo deseas
+          },
+          (error) => {
+            setLoading(false);
+            Alert.alert('Error', 'Error al subir la imagen');
+            console.error('Error al subir la imagen:', error);
+          },
+          () => {
+            getDownloadURL(uploadTask.snapshot.ref).then(async (downloadURL) => {
+              setProfileImage(downloadURL);
+
+              // Guardar URL de la imagen en Firestore
+              const userDocRef = doc(db, 'users', user.uid);
+              await setDoc(userDocRef, { profileImage: downloadURL }, { merge: true });
+              setLoading(false);
+            });
+          }
+        );
+      } catch (error) {
+        setLoading(false);
+        Alert.alert('Error', 'Error al subir la imagen');
+        console.error('Error al subir la imagen:', error);
+      }
+    } else {
+      console.log('No valid image selected');
     }
   };
 
@@ -120,9 +185,15 @@ const UserDetail = () => {
       </View>
 
       <View style={styles.containerInside}>
-        <View style={styles.profileImageContainer}>
-          <Icon name="user" size={100} color="#000" />
-        </View>
+        <TouchableOpacity onPress={pickImage}>
+          {loading ? (
+            <ActivityIndicator size="large" color="#000" />
+          ) : profileImage ? (
+            <Image source={{ uri: profileImage }} style={styles.profileImage} />
+          ) : (
+            <Icon name="user" size={100} color="#000" />
+          )}
+        </TouchableOpacity>
         <View style={styles.inputContainer}>
           <Text style={styles.label}>NOMBRE</Text>
           <TextInput
@@ -214,6 +285,12 @@ const styles = StyleSheet.create({
   profileImageContainer: {
     marginBottom: 20,
     alignItems: 'center',
+  },
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 20,
   },
   inputContainer: {
     width: '100%',

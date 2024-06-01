@@ -1,18 +1,38 @@
-import React, { useState, useRef } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, ScrollView, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import Footer from '../components/Footer';
 import MenuModal from '../components/MenuModal';
 import ProfileModal from '../components/ProfileModal';
 import CourseCard from '../components/CourseCard';
+import StudentInfoModal from '../components/StudentInfoModal';
+import { doc, getDoc } from 'firebase/firestore';
+import { db, auth } from '../utils/firebase';
 
 const UserInterface = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [infoModalVisible, setInfoModalVisible] = useState(false);
   const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
   const userIconRef = useRef(null);
   const navigation = useNavigation();
+
+  useEffect(() => {
+    const checkStudentInfo = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const studentDocRef = doc(db, 'Estudiantes', user.uid);
+        const studentDoc = await getDoc(studentDocRef);
+
+        if (!studentDoc.exists() || !studentDoc.data().edad || !studentDoc.data().telefono || !studentDoc.data().intereses) {
+          setInfoModalVisible(true);
+        }
+      }
+    };
+
+    checkStudentInfo();
+  }, []);
 
   const openModal = () => setModalVisible(true);
   const closeModal = () => setModalVisible(false);
@@ -86,6 +106,11 @@ const UserInterface = () => {
         onClose={closeProfileModal}
         userIconPosition={userIconPosition}
         navigateToUserDetail={navigateToUserDetail}
+      />
+
+      <StudentInfoModal
+        visible={infoModalVisible}
+        onClose={() => setInfoModalVisible(false)}
       />
     </View>
   );

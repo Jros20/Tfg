@@ -1,16 +1,22 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../utils/firebase';
+import { updatePassword } from 'firebase/auth';
 import Footer from '../components/Footer';
 import MenuModal from '../components/MenuModal';
 import ProfileModal from '../components/ProfileModal';
-
 
 const UserDetail = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
+  const [editable, setEditable] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const userIconRef = useRef(null);
   const navigation = useNavigation();
 
@@ -51,6 +57,51 @@ const UserDetail = () => {
     { id: 5, name: 'TERMINOS Y CONDICIONES' },
   ];
 
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setName(userData.name);
+          setEmail(userData.email);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  const handleSave = async () => {
+    if (!editable) {
+      setEditable(true);
+      return;
+    }
+
+    const user = auth.currentUser;
+
+    try {
+      // Actualizar la contraseña si se ha ingresado una nueva
+      if (newPassword) {
+        await updatePassword(user, newPassword);
+      }
+
+      // Guardar la información actualizada en Firestore
+      const userDocRef = doc(db, 'users', user.uid);
+      await setDoc(userDocRef, {
+        name,
+      }, { merge: true });
+
+      Alert.alert('Éxito', 'Información actualizada correctamente');
+      setEditable(false);
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo actualizar la información');
+      console.error('Error al actualizar la información del usuario:', error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -74,18 +125,34 @@ const UserDetail = () => {
         </View>
         <View style={styles.inputContainer}>
           <Text style={styles.label}>NOMBRE</Text>
-          <TextInput style={styles.input} value="JUAN ANTONIO" editable={false} />
+          <TextInput
+            style={styles.input}
+            value={name}
+            editable={editable}
+            onChangeText={setName}
+          />
         </View>
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>CONTRASEÑA</Text>
-          <TextInput style={styles.input} value="*************" editable={false} secureTextEntry />
+          <Text style={styles.label}>NUEVA CONTRASEÑA</Text>
+          <TextInput
+            style={styles.input}
+            value={newPassword}
+            editable={editable}
+            onChangeText={setNewPassword}
+            secureTextEntry
+            placeholder="Nueva contraseña"
+          />
         </View>
         <View style={styles.inputContainer}>
           <Text style={styles.label}>CORREO ELECTRÓNICO</Text>
-          <TextInput style={styles.input} value="JUANR020@GMAIL.COM" editable={false} />
+          <TextInput
+            style={styles.input}
+            value={email}
+            editable={false}
+          />
         </View>
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>EDITAR INFORMACIÓN</Text>
+        <TouchableOpacity style={styles.button} onPress={handleSave}>
+          <Text style={styles.buttonText}>{editable ? 'GUARDAR INFORMACIÓN' : 'EDITAR INFORMACIÓN'}</Text>
         </TouchableOpacity>
       </View>
 

@@ -22,6 +22,7 @@ const CoursesScreen = () => {
   const [visibleProfessors, setVisibleProfessors] = useState(4);
   const [filter, setFilter] = useState('all');
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
+  const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showCourses, setShowCourses] = useState(true);
   const [showProfessors, setShowProfessors] = useState(true);
@@ -50,7 +51,19 @@ const CoursesScreen = () => {
       }
     };
 
+    const fetchCategories = async () => {
+      try {
+        const categoriesQuerySnapshot = await getDocs(collection(db, 'Categorias'));
+        const categoriesData = categoriesQuerySnapshot.docs.map(doc => doc.data().NombreCategoria);
+        setCategories(categoriesData);
+        console.log("Fetched categories:", categoriesData);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+
     fetchCoursesAndProfessors();
+    fetchCategories();
   }, []);
 
   const loadMoreCourses = () => {
@@ -107,8 +120,15 @@ const CoursesScreen = () => {
     return filtered;
   };
 
+  const filterProfessors = (professors) => {
+    if (selectedCategory === 'all') {
+      return professors;
+    }
+    return professors.filter(professor => professor.especializaciones && professor.especializaciones.includes(selectedCategory));
+  };
+
   const filteredCourses = filterItems(courses);
-  const filteredProfessors = filterItems(professors);
+  const filteredProfessors = filterProfessors(professors);
 
   const isSingleView = (showCourses && !showProfessors) || (!showCourses && showProfessors);
 
@@ -136,8 +156,9 @@ const CoursesScreen = () => {
             <Text style={styles.modalLabel}>Categoría</Text>
             <Picker selectedValue={selectedCategory} onValueChange={(itemValue) => setSelectedCategory(itemValue)}>
               <Picker.Item label="Todos" value="all" />
-              <Picker.Item label="Matemáticas" value="math" />
-              <Picker.Item label="Ciencia" value="science" />
+              {categories.map((category, index) => (
+                <Picker.Item key={index} label={category} value={category} />
+              ))}
             </Picker>
             <Text style={styles.modalLabel}>Mostrar</Text>
             <View style={styles.checkboxContainer}>

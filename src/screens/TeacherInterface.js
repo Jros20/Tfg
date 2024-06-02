@@ -10,6 +10,7 @@ import CourseCard from '../components/CourseCard';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../utils/firebase';
 import Curso from '../model/Curso';
+import TeacherInfoModal from '../components/TeacherInfoModal';
 
 const { width } = Dimensions.get('window');
 
@@ -20,9 +21,28 @@ const TeacherInterface = () => {
   const [courses, setCourses] = useState([]);
   const [profileImage, setProfileImage] = useState(null);
   const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
+  const [infoModalVisible, setInfoModalVisible] = useState(false);
   const translateX = useRef(new Animated.Value(-width)).current;
   const userIconRef = useRef(null);
   const navigation = useNavigation();
+
+  const checkTutorInfo = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      const tutorDocRef = doc(db, 'Tutores', user.uid);
+      const tutorDoc = await getDoc(tutorDocRef);
+  
+      if (!tutorDoc.exists() || !tutorDoc.data().edad || !tutorDoc.data().telefono || !tutorDoc.data().tarifas || !tutorDoc.data().especializaciones) {
+        setInfoModalVisible(true);
+      } else {
+        setInfoModalVisible(false); // Asegurarse de que el modal no esté visible si la información ya está completa
+      }
+    }
+  };
+
+  useEffect(() => {
+    checkTutorInfo();
+  }, []);
 
   useEffect(() => {
     const fetchProfileImage = async () => {
@@ -38,6 +58,8 @@ const TeacherInterface = () => {
 
     fetchProfileImage();
   }, []);
+
+
 
   const fetchCourses = async () => {
     const user = auth.currentUser;
@@ -190,6 +212,15 @@ const TeacherInterface = () => {
           fetchCourses();
         }}
       />
+       <TeacherInfoModal
+  visible={infoModalVisible}
+  onClose={() => setInfoModalVisible(false)}
+  onSave={() => {
+    setInfoModalVisible(false);
+    navigation.navigate('TeacherInterface');
+  }}
+/>
+
     </View>
   );
 };

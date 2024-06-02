@@ -18,6 +18,7 @@ const CoursesScreen = () => {
   const [menuModalVisible, setMenuModalVisible] = useState(false);
   const [courses, setCourses] = useState([]);
   const [professors, setProfessors] = useState([]);
+  const [tutors, setTutors] = useState([]);
   const [visibleCourses, setVisibleCourses] = useState(10);
   const [visibleProfessors, setVisibleProfessors] = useState(4);
   const [filter, setFilter] = useState('all');
@@ -46,6 +47,15 @@ const CoursesScreen = () => {
         setProfessors(professorsData);
         console.log("Fetched courses:", coursesData);
         console.log("Fetched professors:", professorsData);
+
+        // Fetch tutor details
+        const tutorsQuerySnapshot = await getDocs(collection(db, 'Tutores'));
+        const tutorsData = tutorsQuerySnapshot.docs.map(doc => ({
+          ...doc.data(),
+          uid: doc.id
+        }));
+        setTutors(tutorsData);
+        console.log("Fetched tutors:", tutorsData);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -54,7 +64,10 @@ const CoursesScreen = () => {
     const fetchCategories = async () => {
       try {
         const categoriesQuerySnapshot = await getDocs(collection(db, 'Categorias'));
-        const categoriesData = categoriesQuerySnapshot.docs.map(doc => doc.data().NombreCategoria);
+        const categoriesData = categoriesQuerySnapshot.docs.map(doc => ({
+          id: doc.id,
+          name: doc.data().NombreCategoria
+        }));
         setCategories(categoriesData);
         console.log("Fetched categories:", categoriesData);
       } catch (error) {
@@ -120,15 +133,17 @@ const CoursesScreen = () => {
     return filtered;
   };
 
-  const filterProfessors = (professors) => {
+  const filterProfessors = (professors, tutors) => {
     if (selectedCategory === 'all') {
       return professors;
     }
-    return professors.filter(professor => professor.especializaciones && professor.especializaciones.includes(selectedCategory));
+    const filteredTutors = tutors.filter(tutor => tutor.especializaciones && tutor.especializaciones.includes(selectedCategory));
+    const filteredTutorIds = filteredTutors.map(tutor => tutor.uid);
+    return professors.filter(professor => filteredTutorIds.includes(professor.uid));
   };
 
   const filteredCourses = filterItems(courses);
-  const filteredProfessors = filterProfessors(professors);
+  const filteredProfessors = filterProfessors(professors, tutors);
 
   const isSingleView = (showCourses && !showProfessors) || (!showCourses && showProfessors);
 
@@ -156,8 +171,8 @@ const CoursesScreen = () => {
             <Text style={styles.modalLabel}>Categoría</Text>
             <Picker selectedValue={selectedCategory} onValueChange={(itemValue) => setSelectedCategory(itemValue)}>
               <Picker.Item label="Todos" value="all" />
-              {categories.map((category, index) => (
-                <Picker.Item key={index} label={category} value={category} />
+              {categories.map((category) => (
+                <Picker.Item key={category.id} label={category.name} value={category.id} />
               ))}
             </Picker>
             <Text style={styles.modalLabel}>Mostrar</Text>
@@ -196,7 +211,7 @@ const CoursesScreen = () => {
           ))}
           {showProfessors && filteredProfessors.slice(0, visibleProfessors).map((professor) => (
             <View key={professor.uid} style={[styles.professorCard, styles.verticalProfessorCard]}>
-              <Image source={{ uri: professor.fotoPerfil }} style={styles.professorImage} />
+              <Image source={{ uri: professor.profileImage }} style={styles.professorImage} />
               <Text style={styles.professorName}>{professor.name}</Text>
               <Text style={styles.professorDescription}>{professor.description}</Text>
             </View>
@@ -238,7 +253,7 @@ const CoursesScreen = () => {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScrollView}>
                 {filteredProfessors.slice(0, visibleProfessors).map((professor) => (
                   <View key={professor.uid} style={styles.professorCard}>
-                    <Image source={{ uri: professor.fotoPerfil }} style={styles.professorImage} />
+                    <Image source={{ uri: professor.profileImage }} style={styles.professorImage} />
                     <Text style={styles.professorName}>{professor.name}</Text>
                     <Text style={styles.professorDescription}>{professor.description}</Text>
                   </View>
@@ -323,18 +338,22 @@ const styles = StyleSheet.create({
   scrollView: {
     flexGrow: 1,
     padding: 16,
+    alignItems: 'center',
   },
   verticalScrollView: {
     flexGrow: 1,
     padding: 16,
+    alignItems: 'center',
   },
   section: {
     marginBottom: 24,
+    width: '100%',
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 12,
+    alignSelf: 'flex-start',
   },
   horizontalScrollView: {
     flexDirection: 'row',
@@ -348,13 +367,19 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginRight: 16,
   },
+  verticalCard: {
+    width: width * 0.9,
+    marginBottom: 16,
+  },
   cardImage: {
-    width: 150,
+    width: '100%',
     height: 100,
     borderRadius: 10,
   },
   cardText: {
     fontSize: 16,
+    textAlign: 'center',
+    marginTop: 10,
   },
   professorCard: {
     width: 150,
@@ -365,6 +390,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginRight: 16,
     padding: 10,
+  },
+  verticalProfessorCard: {
+    width: width * 0.9,
+    marginBottom: 16,
   },
   professorImage: {
     width: 100,
@@ -400,5 +429,6 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
 });
+
 
 export default CoursesScreen;

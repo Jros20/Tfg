@@ -2,8 +2,13 @@ import React from 'react';
 import { TouchableOpacity, Image, View, Text, StyleSheet } from 'react-native';
 
 const ClassCard = ({ clase, onPress }) => {
+  const handlePress = () => {
+    console.log(`ClassCard pressed with classId: ${clase.id}`);
+    onPress(clase.id);
+  };
+
   return (
-    <TouchableOpacity style={styles.classCard} onPress={onPress}>
+    <TouchableOpacity style={styles.classCard} onPress={handlePress}>
       <Image source={{ uri: clase.imageUrl }} style={styles.classImage} />
       <View style={styles.classDetails}>
         <Text style={styles.className}>Clase: {clase.className}</Text>

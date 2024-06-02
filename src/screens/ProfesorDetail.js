@@ -1,28 +1,74 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, Animated, Dimensions, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '../utils/firebase';
-import * as ImagePicker from 'expo-image-picker';
 import ClassCard from '../components/ClassCard';
 import ClassModal from '../components/ClassModal';
 import Clase from '../model/Clase';
 import Footer from '../components/Footer';
+import ProfileModal from '../components/ProfileModal';
+
+import { db, auth } from '../utils/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import User from '../model/User';
+
+const { width } = Dimensions.get('window');
 
 const ProfesorDetail = () => {
   const route = useRoute();
-  const { courseId, courseName } = route.params;
+  const { courseId } = route.params;
+  console.log('Route Params:', route.params); // Log route params
+  console.log('Course ID:', courseId); // Log courseId
+
+  const [courseName, setCourseName] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [clases, setClases] = useState([]);
   const [className, setClassName] = useState('');
   const [duration, setDuration] = useState('');
   const [image, setImage] = useState(null);
   const [video, setVideo] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [profileImage, setProfileImage] = useState(null);
+  const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
+  const translateX = useRef(new Animated.Value(-width)).current;
+  const userIconRef = useRef(null);
   const navigation = useNavigation();
   const [documentos, setDocumentos] = useState('');
+  const [userRole, setUserRole] = useState('');
 
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          const userData = User.fromFirestore(userDoc);
+          setUserRole(userData.role);
+          setProfileImage(userData.fotoPerfil);
+        }
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
+  useEffect(() => {
+    const fetchProfileImage = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists() && userDoc.data().profileImage) {
+          setProfileImage(userDoc.data().profileImage);
+        }
+      }
+    };
+
+    fetchProfileImage();
+  }, []);
+  
   useEffect(() => {
     const fetchClases = async () => {
       try {
@@ -38,6 +84,24 @@ const ProfesorDetail = () => {
     };
 
     fetchClases();
+  }, [courseId]);
+
+  useEffect(() => {
+    const fetchCourseName = async () => {
+      try {
+        const courseDoc = await getDoc(doc(db, 'Cursos', courseId));
+        if (courseDoc.exists()) {
+          setCourseName(courseDoc.data().courseName);
+          console.log('Course Name:', courseDoc.data().courseName); // Log course name
+        } else {
+          console.error('Course not found');
+        }
+      } catch (error) {
+        console.error('Error fetching course name:', error);
+      }
+    };
+
+    fetchCourseName();
   }, [courseId]);
 
   const handleCreateClass = async () => {
@@ -102,24 +166,49 @@ const ProfesorDetail = () => {
     if (result) setVideo(result);
   };
 
+  const handleClassCardPress = (classId) => {
+    console.log(`Navigating to ClaseDetail with classId: ${classId}`);
+    navigation.navigate('ClaseDetail', { classId });
+  };
+
+  const openProfileModal = () => {
+    userIconRef.current.measure((fx, fy, width, height, px, py) => {
+      setUserIconPosition({ x: px, y: py + height });
+      setProfileModalVisible(true);
+    });
+  };
+
+  const closeProfileModal = () => {
+    setProfileModalVisible(false);
+  };
+
+  const handleBackPress = () => {
+    if (userRole === 'PROFESOR') {
+      navigation.navigate('TeacherInterface');
+    } else {
+      navigation.navigate('UserInterface');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.menuButton}>
-          <Icon name="bars" size={24} color="#000" />
+        <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
+          <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.title}>{courseName}</Text>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.searchButton}>
-            <Icon name="search" size={24} color="#000" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.profileButton}>
-            <Icon name="user" size={24} color="#000" />
+        
+          <TouchableOpacity ref={userIconRef} style={styles.profileButton} onPress={openProfileModal}>
+            {profileImage ? (
+              <Image source={{ uri: profileImage }} style={styles.profileImage} />
+            ) : (
+              <Icon name="user" size={24} color="#000" />
+            )}
           </TouchableOpacity>
         </View>
       </View>
-
       <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <Text style={styles.courseNameText}>{courseName}</Text>
         {clases.length === 0 ? (
           <View style={styles.noClassesContainer}>
             <Text style={styles.noClassesText}>Se subirán clases próximamente</Text>
@@ -129,15 +218,21 @@ const ProfesorDetail = () => {
             <ClassCard
               key={clase.id}
               clase={clase}
-              onPress={() => navigation.navigate('ClaseDetail', { classId: clase.id })}
+              onPress={() => handleClassCardPress(clase.id)}
             />
           ))
         )}
       </ScrollView>
 
-      <TouchableOpacity style={styles.fab} onPress={openModal}>
-        <Icon name="plus" size={24} color="#fff" />
-      </TouchableOpacity>
+
+
+      {userRole === 'PROFESOR' && (
+  <TouchableOpacity style={styles.fab} onPress={openModal}>
+    <Icon name="plus" size={24} color="#fff" />
+  </TouchableOpacity>
+)}
+
+
       <Footer />
 
       <ClassModal
@@ -155,6 +250,14 @@ const ProfesorDetail = () => {
         pickVideo={pickVideo}
         handleCreateClass={handleCreateClass}
         uploading={uploading}
+      />
+
+      <ProfileModal
+        visible={profileModalVisible}
+        onClose={closeProfileModal}
+        userIconPosition={userIconPosition}
+        navigateToUserDetail={() => navigation.navigate('UserDetail')}
+        navigateToLogin={() => navigation.navigate('LoginScreen')}
       />
     </View>
   );
@@ -174,7 +277,7 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     backgroundColor: '#f8f8f8',
   },
-  menuButton: {
+  backButton: {
     padding: 10,
   },
   title: {
@@ -191,8 +294,19 @@ const styles = StyleSheet.create({
   profileButton: {
     padding: 10,
   },
+  profileImage: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
   scrollContainer: {
     padding: 16,
+    alignItems: 'center',
+  },
+  courseNameText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
   noClassesContainer: {
     flex: 1,

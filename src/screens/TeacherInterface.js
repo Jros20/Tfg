@@ -155,6 +155,7 @@ const TeacherInterface = () => {
         </View>
       </View>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <Text style={styles.coursesAvailableText}>Cursos disponibles</Text>
         {courses.map((course) => (
           <CourseCard key={course.courseId} course={course} />
         ))}
@@ -232,6 +233,11 @@ const styles = StyleSheet.create({
   scrollContainer: {
     padding: 16,
     alignItems: 'center',
+  },
+  coursesAvailableText: { // Estilos para el nuevo texto
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
   courseCard: {
     backgroundColor: '#e0e0e0',

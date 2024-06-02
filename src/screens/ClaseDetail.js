@@ -1,11 +1,60 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, ScrollView } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { WebView } from 'react-native-webview';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import { doc, getDoc } from 'firebase/firestore';
+import { db, auth } from '../utils/firebase'; // Asegúrate de que auth está correctamente importado
+import ProfileModal from '../components/ProfileModal';
 
 const ClaseDetail = () => {
+  const route = useRoute();
+  const navigation = useNavigation();
+  const { classId } = route.params;
   const [commentModalVisible, setCommentModalVisible] = useState(false);
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
   const [comment, setComment] = useState('');
+  const [classData, setClassData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [profileImage, setProfileImage] = useState(null); // Nuevo estado para la imagen de perfil
+  const userIconRef = useRef(null);
+
+  useEffect(() => {
+    const fetchClassData = async () => {
+      try {
+        const docRef = doc(db, 'Clases', classId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          setClassData(docSnap.data());
+        } else {
+          console.log('No such document!');
+        }
+      } catch (error) {
+        console.error('Error fetching class data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchClassData();
+  }, [classId]);
+
+  useEffect(() => {
+    const fetchProfileImage = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists() && userDoc.data().profileImage) {
+          setProfileImage(userDoc.data().profileImage);
+        }
+      }
+    };
+
+    fetchProfileImage();
+  }, []);
 
   const openCommentModal = () => {
     setCommentModalVisible(true);
@@ -15,23 +64,58 @@ const ClaseDetail = () => {
     setCommentModalVisible(false);
   };
 
+  const openProfileModal = () => {
+    userIconRef.current.measure((fx, fy, width, height, px, py) => {
+      setUserIconPosition({ x: px, y: py + height });
+      setProfileModalVisible(true);
+    });
+  };
+
+  const closeProfileModal = () => {
+    setProfileModalVisible(false);
+  };
+
   const handleCommentSubmit = () => {
     // Lógica para enviar el comentario
     closeCommentModal();
   };
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <ScrollView>
-        <View style={styles.header}>
-          <Text style={styles.title}>MATEMÁTICAS 1</Text>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.menuButton} onPress={() => navigation.goBack()}>
+          <Icon name="arrow-left" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.title}>{classData?.className || 'Clase'}</Text>
+        <View style={styles.headerRight}>
+          <TouchableOpacity ref={userIconRef} style={styles.profileButton} onPress={openProfileModal}>
+            {profileImage ? (
+              <Image source={{ uri: profileImage }} style={styles.profileImage} />
+            ) : (
+              <Icon name="user" size={24} color="#000" />
+            )}
+          </TouchableOpacity>
         </View>
-        <WebView
-          style={styles.video}
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          source={{ uri: 'https://www.youtube.com/watch?v=gnTENXZc1jU&list=RDgnTENXZc1jU&start_radio=1&ab_channel=izalVEVO&themeRefresh=1' }} // URL del video de YouTube
-        />
+      </View>
+      <ScrollView>
+        {classData?.videoUrl ? (
+          <WebView
+            style={styles.video}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            source={{ uri: classData.videoUrl }}
+          />
+        ) : (
+          <Text style={styles.noVideoText}>No hay video disponible</Text>
+        )}
         <View style={styles.commentsSection}>
           <Text style={styles.commentsTitle}>COMENTARIOS</Text>
           <View style={styles.commentCard}>
@@ -41,7 +125,7 @@ const ClaseDetail = () => {
       </ScrollView>
 
       <TouchableOpacity style={styles.fab} onPress={openCommentModal}>
-        <Icon name="search" size={24} color="#fff" />
+        <Icon name="comment" size={24} color="#fff" />
       </TouchableOpacity>
 
       <Modal
@@ -69,6 +153,12 @@ const ClaseDetail = () => {
           </View>
         </View>
       </Modal>
+
+      <ProfileModal
+        visible={profileModalVisible}
+        onClose={closeProfileModal}
+        userIconPosition={userIconPosition}
+      />
     </View>
   );
 };
@@ -79,18 +169,42 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-    backgroundColor: '#f8f8f8',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 40,
+    paddingBottom: 10,
+    backgroundColor: '#f8f8f8',
+  },
+  menuButton: {
+    padding: 10,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profileButton: {
+    padding: 10,
+  },
+  profileImage: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
   video: {
     width: '100%',
     height: 200,
+  },
+  noVideoText: {
+    textAlign: 'center',
+    margin: 20,
+    fontSize: 16,
+    color: '#666',
   },
   commentsSection: {
     padding: 16,
@@ -160,6 +274,11 @@ const styles = StyleSheet.create({
   buttonTextSubmit: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

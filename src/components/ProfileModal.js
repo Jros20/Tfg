@@ -73,15 +73,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   profileModalButton: {
+    width: '100%', // Asegura que los botones tengan el mismo ancho
     backgroundColor: '#1E90FF',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
     marginVertical: 5,
+    alignItems: 'center', // Centra el texto dentro del botón
   },
   profileModalButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+    fontSize:12,
   },
   overlay: {
     flex: 10,

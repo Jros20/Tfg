@@ -1,30 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, Button } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import ClassModal from '../components/ClassModal';
-import Clase from '../model/Clase';
-import { db, auth } from '../utils/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../utils/firebase';
 
 const ProfesorDetail = ({ route }) => {
-  const { courseName } = route.params;
+  const { courseId, courseName } = route.params;
   const [modalVisible, setModalVisible] = useState(false);
   const [clases, setClases] = useState([]);
+  const navigation = useNavigation();
 
-  useEffect(() => {
-    const fetchClases = async () => {
-      const q = query(collection(db, 'Clases'), where('courseName', '==', courseName));
+  const fetchClases = async () => {
+    try {
+      if (!courseId) {
+        console.error('courseId is undefined');
+        return;
+      }
+      console.log('Fetching classes for courseId:', courseId);
+      const q = query(collection(db, 'Clases'), where('courseId', '==', courseId));
       const querySnapshot = await getDocs(q);
       const fetchedClases = [];
       querySnapshot.forEach((doc) => {
-        fetchedClases.push({ id: doc.id, ...doc.data() });
+        const data = doc.data();
+        fetchedClases.push({ id: doc.id, ...data });
       });
+      if (fetchedClases.length === 0) {
+        console.log('No hay clases todavía');
+      }
       setClases(fetchedClases);
-    };
+    } catch (error) {
+      console.error('Error fetching classes:', error);
+    }
+  };
 
+  useEffect(() => {
     fetchClases();
-  }, [courseName]);
+  }, [courseId]);
 
   const openModal = () => {
     setModalVisible(true);
@@ -34,9 +47,8 @@ const ProfesorDetail = ({ route }) => {
     setModalVisible(false);
   };
 
-  const handleSave = () => {
-    // Refresh classes after save
-    fetchClases();
+  const handleSave = async () => {
+    await fetchClases();
   };
 
   return (
@@ -57,20 +69,26 @@ const ProfesorDetail = ({ route }) => {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {clases.map((clase) => (
-          <TouchableOpacity
-            key={clase.id}
-            style={styles.classCard}
-            onPress={() => navigation.navigate('ClaseDetail', { className: clase.id })}
-          >
-            <Image source={{ uri: clase.imageUrl }} style={styles.classImage} />
-            <View style={styles.classDetails}>
-              <Text style={styles.className}>Clase: {clase.id}</Text>
-              <Text style={styles.classDuration}>Duración: {clase.duration}</Text>
-              <Text style={styles.classAttachedFiles}>Archivos Adjuntos: {clase.attachedFiles}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
+        {clases.length === 0 ? (
+          <View style={styles.noClassesContainer}>
+            <Text style={styles.noClassesText}>Se subirán clases próximamente</Text>
+          </View>
+        ) : (
+          clases.map((clase) => (
+            <TouchableOpacity
+              key={clase.id}
+              style={styles.classCard}
+              onPress={() => navigation.navigate('ClaseDetail', { classId: clase.id })}
+            >
+              <Image source={{ uri: clase.imageUrl }} style={styles.classImage} />
+              <View style={styles.classDetails}>
+                <Text style={styles.className}>Clase: {clase.id}</Text>
+                <Text style={styles.classDuration}>Duración: {clase.duration}</Text>
+                <Text style={styles.classAttachedFiles}>Archivos Adjuntos: {clase.attachedFiles.length}</Text>
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
       </ScrollView>
 
       <TouchableOpacity style={styles.fab} onPress={openModal}>
@@ -80,7 +98,7 @@ const ProfesorDetail = ({ route }) => {
       <ClassModal
         visible={modalVisible}
         onClose={closeModal}
-        courseName={courseName}
+        courseId={courseId}
         onSave={handleSave}
       />
     </View>
@@ -120,6 +138,16 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     padding: 16,
+  },
+  noClassesContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 50,
+  },
+  noClassesText: {
+    fontSize: 18,
+    color: '#666',
   },
   classCard: {
     backgroundColor: '#e0e0e0',

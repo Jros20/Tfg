@@ -40,15 +40,10 @@ const TeacherInterface = () => {
   }, []);
 
   const fetchCourses = async () => {
-    try {
-      console.log("Fetching courses...");
-      const user = auth.currentUser;
-      if (user) {
-        const fetchedCourses = await Curso.getCoursesByTutor(user.uid);
-        setCourses(fetchedCourses);
-      }
-    } catch (error) {
-      console.error("Error fetching courses: ", error);
+    const user = auth.currentUser;
+    if (user) {
+      const fetchedCourses = await Curso.getCoursesByTutor(user.uid);
+      setCourses(fetchedCourses);
     }
   };
 
@@ -161,7 +156,7 @@ const TeacherInterface = () => {
       </View>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {courses.map((course) => (
-          <CourseCard key={course.id} course={course} />
+          <CourseCard key={course.courseId} course={course} />
         ))}
       </ScrollView>
       <Footer />
@@ -267,7 +262,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 80, // Movido hacia arriba
+    bottom: 80,
     right: 20,
     width: 60,
     height: 60,

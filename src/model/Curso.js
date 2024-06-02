@@ -1,10 +1,10 @@
 import { db, auth, storage } from '../utils/firebase';
-import { doc, getDoc, query, where, getDocs, addDoc, collection } from 'firebase/firestore';
+import { doc, setDoc, getDoc, query, where, getDocs, collection } from 'firebase/firestore';
 import { ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 
 class Curso {
-  constructor(id, tutorId, courseName, description, duration, categoryId, imageUrl) {
-    this.id = id;
+  constructor(courseId, tutorId, courseName, description, duration, categoryId, imageUrl) {
+    this.courseId = courseId;
     this.tutorId = tutorId;
     this.courseName = courseName;
     this.description = description;
@@ -19,10 +19,7 @@ class Curso {
       if (!user) {
         throw new Error('User not authenticated');
       }
-      console.log("User authenticated: ", user.uid);
 
-      // Upload image to Firebase Storage
-      console.log("Uploading image...");
       const storageRef = ref(storage, `courseImages/${user.uid}/${Date.now()}`);
       const response = await fetch(imageUri);
       const blob = await response.blob();
@@ -31,26 +28,24 @@ class Curso {
       await new Promise((resolve, reject) => {
         uploadTask.on(
           'state_changed',
-          (snapshot) => {
-            console.log("Upload progress: ", (snapshot.bytesTransferred / snapshot.totalBytes) * 100, "%");
-          },
+          (snapshot) => {},
           (error) => {
             console.error("Error during upload: ", error);
             reject(error);
           },
           () => {
-            console.log("Upload complete");
             resolve();
           }
         );
       });
 
       const imageUrl = await getDownloadURL(uploadTask.snapshot.ref);
-      console.log("Image uploaded, URL: ", imageUrl);
 
-      // Add course to Firestore
-      console.log("Adding course to Firestore...");
-      const courseRef = await addDoc(collection(db, 'Cursos'), {
+      const courseRef = doc(collection(db, 'Cursos'));
+      const courseId = courseRef.id;
+
+      await setDoc(courseRef, {
+        courseId: courseId,
         tutorId: user.uid,
         courseName,
         description,
@@ -59,9 +54,7 @@ class Curso {
         imageUrl,
       });
 
-      console.log("Course created with ID: ", courseRef.id);
-
-      return new Curso(courseRef.id, user.uid, courseName, description, duration, categoryId, imageUrl);
+      return new Curso(courseId, user.uid, courseName, description, duration, categoryId, imageUrl);
     } catch (error) {
       console.error('Error creating course:', error);
       throw error;
@@ -70,15 +63,13 @@ class Curso {
 
   static async getCoursesByTutor(tutorId) {
     try {
-      console.log("Fetching courses for tutor: ", tutorId);
       const q = query(collection(db, 'Cursos'), where('tutorId', '==', tutorId));
       const querySnapshot = await getDocs(q);
       const courses = [];
       querySnapshot.forEach((doc) => {
         const data = doc.data();
-        console.log("Course data: ", data);
         const course = new Curso(
-          doc.id,
+          doc.id, // Utiliza el ID del documento como courseId
           data.tutorId,
           data.courseName,
           data.description,
@@ -88,7 +79,6 @@ class Curso {
         );
         courses.push(course);
       });
-      console.log("Fetched courses: ", courses);
       return courses;
     } catch (error) {
       console.error('Error getting courses by tutor:', error);
@@ -98,15 +88,13 @@ class Curso {
 
   static async getCourseById(courseId) {
     try {
-      console.log("Fetching course by ID: ", courseId);
       const courseDoc = await getDoc(doc(db, 'Cursos', courseId));
       if (!courseDoc.exists()) {
         throw new Error('Course not found');
       }
       const data = courseDoc.data();
-      console.log("Course data: ", data);
       return new Curso(
-        courseDoc.id,
+        courseDoc.id, // Utiliza el ID del documento como courseId
         data.tutorId,
         data.courseName,
         data.description,

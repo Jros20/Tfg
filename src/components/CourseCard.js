@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { doc, getDoc, query, where, getDocs, collection } from 'firebase/firestore';
-import { useNavigation } from '@react-navigation/native';  // Importa useNavigation
+import { useNavigation } from '@react-navigation/native';
 import { db } from '../utils/firebase';
 
 const CourseCard = ({ course }) => {
   const [categoryName, setCategoryName] = useState('');
   const [enrollmentCount, setEnrollmentCount] = useState(0);
-  const navigation = useNavigation();  // Usa el hook useNavigation
+  const navigation = useNavigation();
 
   useEffect(() => {
     const fetchCategoryName = async () => {
       try {
         const categoryDoc = await getDoc(doc(db, 'Categorias', course.categoryId));
         if (categoryDoc.exists()) {
-          setCategoryName(categoryDoc.data().NombreCategoria); // Asegúrate de que el campo coincida con el de Firestore
+          setCategoryName(categoryDoc.data().NombreCategoria);
         } else {
           setCategoryName('Sin categoría');
         }
@@ -26,7 +26,7 @@ const CourseCard = ({ course }) => {
 
     const fetchEnrollmentCount = async () => {
       try {
-        const enrollmentQuery = query(collection(db, 'Inscripciones'), where('courseId', '==', course.id));
+        const enrollmentQuery = query(collection(db, 'Inscripciones'), where('courseId', '==', course.courseId));
         const enrollmentQuerySnapshot = await getDocs(enrollmentQuery);
         setEnrollmentCount(enrollmentQuerySnapshot.size);
       } catch (error) {
@@ -36,14 +36,15 @@ const CourseCard = ({ course }) => {
 
     fetchCategoryName();
     fetchEnrollmentCount();
-  }, [course.categoryId, course.id]);
+  }, [course.categoryId, course.courseId]);
 
   const handlePress = () => {
-    navigation.navigate('ProfesorDetail', { courseId: course.id });  // Navega a ClaseDetail con el ID del curso
+    console.log('Document ID:', course.courseId);  // Log del ID del documento
+    navigation.navigate('ProfesorDetail', { courseId: course.courseId });  // Navega a ProfesorDetail con el ID del documento
   };
 
   return (
-    <TouchableOpacity key={course.id} style={styles.courseCard} onPress={handlePress}>
+    <TouchableOpacity key={course.courseId} style={styles.courseCard} onPress={handlePress}>
       <Image source={{ uri: course.imageUrl }} style={styles.courseImage} />
       <View style={styles.courseDetails}>
         <Text style={styles.courseName}>{course.courseName}</Text>

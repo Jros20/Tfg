@@ -39,15 +39,20 @@ const TeacherInterface = () => {
     fetchProfileImage();
   }, []);
 
-  useEffect(() => {
-    const fetchCourses = async () => {
+  const fetchCourses = async () => {
+    try {
+      console.log("Fetching courses...");
       const user = auth.currentUser;
       if (user) {
         const fetchedCourses = await Curso.getCoursesByTutor(user.uid);
         setCourses(fetchedCourses);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching courses: ", error);
+    }
+  };
 
+  useEffect(() => {
     fetchCourses();
   }, []);
 

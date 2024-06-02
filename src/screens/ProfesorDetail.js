@@ -12,6 +12,7 @@ const ProfesorDetail = () => {
   const { courseId, courseName } = route.params;
   const [modalVisible, setModalVisible] = useState(false);
   const [clases, setClases] = useState([]);
+  const [className, setClassName] = useState('');
   const [duration, setDuration] = useState('');
   const [image, setImage] = useState(null);
   const [video, setVideo] = useState(null);
@@ -119,8 +120,8 @@ const ProfesorDetail = () => {
   };
 
   const handleCreateClass = async () => {
-    if (!duration || !image) {
-      Alert.alert('Error', 'La duración y la imagen son obligatorias.');
+    if (!className || !duration || !image) {
+      Alert.alert('Error', 'El nombre de la clase, la duración y la imagen son obligatorias.');
       return;
     }
 
@@ -138,6 +139,7 @@ const ProfesorDetail = () => {
       await setDoc(classRef, {
         classId: classId,
         courseId: courseId,
+        className: className,
         duration: duration,
         imageUrl: imageUrl,
         videoUrl: videoUrl, // Almacenar la URL del video si existe
@@ -160,6 +162,7 @@ const ProfesorDetail = () => {
 
   const closeModal = () => {
     setModalVisible(false);
+    setClassName('');
     setDuration('');
     setImage(null);
     setVideo(null);
@@ -196,7 +199,7 @@ const ProfesorDetail = () => {
             >
               <Image source={{ uri: clase.imageUrl }} style={styles.classImage} />
               <View style={styles.classDetails}>
-                <Text style={styles.className}>Clase: {clase.id}</Text>
+                <Text style={styles.className}>Clase: {clase.className}</Text>
                 <Text style={styles.classDuration}>Duración: {clase.duration}</Text>
               </View>
             </TouchableOpacity>
@@ -214,6 +217,13 @@ const ProfesorDetail = () => {
             <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
               <Icon name="close" size={24} color="#000" />
             </TouchableOpacity>
+            <Text style={styles.label}>Nombre de la Clase</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ingrese el nombre de la clase"
+              value={className}
+              onChangeText={setClassName}
+            />
             <Text style={styles.label}>Duración de la Clase</Text>
             <TextInput
               style={styles.input}
@@ -397,3 +407,4 @@ const styles = StyleSheet.create({
 });
 
 export default ProfesorDetail;
+

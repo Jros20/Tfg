@@ -140,7 +140,7 @@ const TeacherInterface = () => {
         <TouchableOpacity style={styles.menuButton} onPress={openModal}>
           <Icon name="bars" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.title}>PORTAL DEL PROFESOR</Text>
+        <Text style={styles.title}>PORTAL PROFESOR</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.searchButton} onPress={navigateToSearchScreen}>
             <Icon name="search" size={24} color="#000" />

@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, TextInput, Modal, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal, Alert, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
 import { db, storage } from '../utils/firebase';
 import { ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 import * as ImagePicker from 'expo-image-picker';
+import ClassCard from '../components/ClassCard';
+import ClassModal from '../components/ClassModal';
+import Footer from '../components/Footer';
 
 const ProfesorDetail = () => {
   const route = useRoute();
@@ -42,14 +45,15 @@ const ProfesorDetail = () => {
       console.error('Error fetching classes:', error);
     }
   };
-  const  isValidUrl = (url) => {
+
+  const isValidUrl = (url) => {
     const pattern = new RegExp('^(https?:\\/\\/)?' + // protocolo
-    '((([a-zA-Z0-9\\-\\.]+)\\.[a-zA-Z]{2,})|' + // dominio
-    '((\\d{1,3}\\.){3}\\d{1,3}))' + // o dirección IP (v4)
-    '(\\:\\d+)?(\\/[-a-zA-Z0-9%_.~+]*)*' + // puerto y ruta
-    '(\\?[;&a-zA-Z0-9%_.~+=-]*)?' + // cadena de consulta
-    '(\\#[-a-zA-Z0-9_]*)?$', 'i'); // fragmento
-  return !!pattern.test(url);
+      '((([a-zA-Z0-9\\-\\.]+)\\.[a-zA-Z]{2,})|' + // dominio
+      '((\\d{1,3}\\.){3}\\d{1,3}))' + // o dirección IP (v4)
+      '(\\:\\d+)?(\\/[-a-zA-Z0-9%_.~+]*)*' + // puerto y ruta
+      '(\\?[;&a-zA-Z0-9%_.~+=-]*)?' + // cadena de consulta
+      '(\\#[-a-zA-Z0-9_]*)?$', 'i'); // fragmento
+    return !!pattern.test(url);
   }
 
   useEffect(() => {
@@ -138,17 +142,17 @@ const ProfesorDetail = () => {
       Alert.alert('Error', 'No se ha podido crear la clase porque documentos no era una URL válida.');
       return;
     }
-  
+
     setUploading(true);
-  
+
     try {
-      const imageUrl = await uploadFile(image, 'image') ;
+      const imageUrl = await uploadFile(image, 'image');
       const videoUrl = video ? await uploadFile(video, 'video') : null;
-  
+
       // Crear una referencia a una nueva clase en la colección 'Clases'
       const classRef = doc(collection(db, 'Clases'));
       const classId = classRef.id;
-  
+
       // Guardar la nueva clase en Firestore
       await setDoc(classRef, {
         classId: classId,
@@ -159,7 +163,7 @@ const ProfesorDetail = () => {
         videoUrl: videoUrl, // Almacenar la URL del video si existe
         documentos: documentos, // Almacenar la URL de los documentos
       });
-  
+
       Alert.alert('Éxito', 'Clase creada con ID: ' + classId);
       await fetchClases(); // Actualizar la lista de clases después de crear una nueva clase
       closeModal();
@@ -170,8 +174,6 @@ const ProfesorDetail = () => {
       setUploading(false);
     }
   };
-  
-  
 
   const openModal = () => {
     setModalVisible(true);
@@ -210,17 +212,11 @@ const ProfesorDetail = () => {
           </View>
         ) : (
           clases.map((clase) => (
-            <TouchableOpacity
+            <ClassCard
               key={clase.id}
-              style={styles.classCard}
+              clase={clase}
               onPress={() => navigation.navigate('ClaseDetail', { classId: clase.id })}
-            >
-              <Image source={{ uri: clase.imageUrl }} style={styles.classImage} />
-              <View style={styles.classDetails}>
-                <Text style={styles.className}>Clase: {clase.className}</Text>
-                <Text style={styles.classDuration}>Duración: {clase.duration}</Text>
-              </View>
-            </TouchableOpacity>
+            />
           ))
         )}
       </ScrollView>
@@ -228,55 +224,24 @@ const ProfesorDetail = () => {
       <TouchableOpacity style={styles.fab} onPress={openModal}>
         <Icon name="plus" size={24} color="#fff" />
       </TouchableOpacity>
+      <Footer />
 
-      <Modal transparent={true} visible={modalVisible} animationType="slide" onRequestClose={closeModal}>
-        <View style={styles.overlay}>
-          <View style={styles.modalContainer}>
-            <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
-              <Icon name="close" size={24} color="#000" />
-            </TouchableOpacity>
-            <Text style={styles.label}>Nombre de la Clase</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ingrese el nombre de la clase"
-              value={className}
-              onChangeText={setClassName}
-            />
-            <Text style={styles.label}>Duración de la Clase</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ingrese la duración"
-              value={duration}
-              onChangeText={setDuration}
-            />
-            <Text style={styles.label}>Documentos</Text>
-<TextInput
-  style={styles.input}
-  placeholder="Ingrese url de documentos"
-  value={documentos}
-  onChangeText={setDocumentos}
-/>
-
-            <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
-              {image ? (
-                <Image source={{ uri: image }} style={styles.image} />
-              ) : (
-                <Text style={styles.imagePickerText}>Seleccionar Imagen</Text>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.videoPicker} onPress={pickVideo}>
-              {video ? (
-                <Text style={styles.videoPickerText}>Video seleccionado</Text>
-              ) : (
-                <Text style={styles.videoPickerText}>Seleccionar Video</Text>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.createButton} onPress={handleCreateClass} disabled={uploading}>
-              {uploading ? <ActivityIndicator color="#fff" /> : <Text style={styles.createButtonText}>Crear Clase</Text>}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <ClassModal
+        modalVisible={modalVisible}
+        closeModal={closeModal}
+        className={className}
+        setClassName={setClassName}
+        duration={duration}
+        setDuration={setDuration}
+        documentos={documentos}
+        setDocumentos={setDocumentos}
+        image={image}
+        pickImage={pickImage}
+        video={video}
+        pickVideo={pickVideo}
+        handleCreateClass={handleCreateClass}
+        uploading={uploading}
+      />
     </View>
   );
 };
@@ -325,31 +290,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#666',
   },
-  classCard: {
-    backgroundColor: '#e0e0e0',
-    padding: 20,
-    marginBottom: 16,
-    borderRadius: 10,
-    flexDirection: 'row',
-  },
-  classImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 10,
-    marginRight: 20,
-  },
-  classDetails: {
-    flex: 1,
-  },
-  className: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  classDuration: {
-    fontSize: 14,
-    marginBottom: 10,
-  },
   fab: {
     position: 'absolute',
     bottom: 80,
@@ -360,75 +300,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  overlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContainer: {
-    width: '80%',
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
-  },
-  closeButton: {
-    alignSelf: 'flex-end',
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  input: {
-    width: '100%',
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    marginBottom: 20,
-  },
-  imagePicker: {
-    width: '100%',
-    height: 150,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    marginBottom: 20,
-  },
-  imagePickerText: {
-    color: '#666',
-  },
-  videoPicker: {
-    width: '100%',
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    marginBottom: 20,
-  },
-  videoPickerText: {
-    color: '#666',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  createButton: {
-    width: '100%',
-    backgroundColor: '#000',
-    borderRadius: 5,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  createButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
   },
 });
 

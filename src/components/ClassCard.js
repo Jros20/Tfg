@@ -1,21 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { TouchableOpacity, Image, View, Text, StyleSheet } from 'react-native';
 
-const ClassCard = ({ clase }) => {
-  const navigation = useNavigation();
-
-  const handlePress = () => {
-    navigation.navigate('ClaseDetail', { classId: clase.id });
-  };
-
+const ClassCard = ({ clase, onPress }) => {
   return (
-    <TouchableOpacity style={styles.classCard} onPress={handlePress}>
+    <TouchableOpacity style={styles.classCard} onPress={onPress}>
       <Image source={{ uri: clase.imageUrl }} style={styles.classImage} />
       <View style={styles.classDetails}>
-        <Text style={styles.className}>Clase: {clase.id}</Text>
+        <Text style={styles.className}>Clase: {clase.className}</Text>
         <Text style={styles.classDuration}>Duración: {clase.duration}</Text>
-        <Text style={styles.classAttachedFiles}>Archivos Adjuntos: {clase.attachedFiles.length}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -46,10 +38,6 @@ const styles = StyleSheet.create({
   classDuration: {
     fontSize: 14,
     marginBottom: 10,
-  },
-  classAttachedFiles: {
-    fontSize: 14,
-    fontWeight: 'bold',
   },
 });
 

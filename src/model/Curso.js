@@ -107,6 +107,19 @@ class Curso {
       throw error;
     }
   }
+
+  static fromFirestore(doc) {
+    const data = doc.data();
+    return new Curso(
+      doc.id,
+      data.tutorId,
+      data.courseName,
+      data.description,
+      data.duration,
+      data.categoryId,
+      data.imageUrl
+    );
+  }
 }
 
 export default Curso;

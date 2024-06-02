@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, ScrollView, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { WebView } from 'react-native-webview';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { doc, getDoc, collection, addDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { db, auth } from '../utils/firebase';
 import ProfileModal from '../components/ProfileModal';
+import ComentarioCard from '../components/ComentarioCard';
+import ModalComentario from '../components/ModalComentario';
+import ClaseComentario from '../model/Comentario';
 import moment from 'moment';
 
 const ClaseDetail = () => {
@@ -15,7 +18,6 @@ const ClaseDetail = () => {
   const [commentModalVisible, setCommentModalVisible] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
-  const [comment, setComment] = useState('');
   const [classData, setClassData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [comments, setComments] = useState([]);
@@ -92,19 +94,18 @@ const ClaseDetail = () => {
     setProfileModalVisible(false);
   };
 
-  const handleCommentSubmit = async () => {
+  const handleCommentSubmit = async (commentText) => {
     try {
       const user = auth.currentUser;
       if (user) {
         await addDoc(collection(db, 'Comentarios'), {
           UID: user.uid,
           classId: classId,
-          content: comment,
+          content: commentText,
           timestamp: Timestamp.now()
         });
         const updatedComments = await getComments(classId);
         setComments(updatedComments);
-        setComment('');
         closeCommentModal();
       } else {
         console.log('User not authenticated');
@@ -125,29 +126,17 @@ const ClaseDetail = () => {
       try {
         const userDocRef = doc(db, 'users', commentData.UID);
         const userDoc = await getDoc(userDocRef);
+        let userData = null;
         if (userDoc.exists()) {
-          const userData = userDoc.data();
+          userData = userDoc.data();
           console.log("Fetched user data:", userData); // Log
-          commentsData.push({ 
-            id: docSnap.id, 
-            ...commentData, 
-            user: userData 
-          });
         } else {
           console.log(`No such user with UID: ${commentData.UID}`);
-          commentsData.push({
-            id: docSnap.id,
-            ...commentData,
-            user: { name: 'Usuario desconocido', profileImage: null }
-          });
         }
+        const comment = ClaseComentario.fromFirestore(docSnap, userData);
+        commentsData.push(comment);
       } catch (error) {
         console.error('Error fetching user data:', error); // Log error
-        commentsData.push({
-          id: docSnap.id,
-          ...commentData,
-          user: { name: 'Error al obtener usuario', profileImage: null }
-        });
       }
     }
     console.log("Final comments data:", commentsData); // Log
@@ -193,18 +182,7 @@ const ClaseDetail = () => {
         <View style={styles.commentsSection}>
           <Text style={styles.commentsTitle}>COMENTARIOS</Text>
           {comments.map(comment => (
-            <View key={comment.id} style={styles.commentCard}>
-              <View style={styles.commentHeader}>
-                {comment.user?.profileImage ? (
-                  <Image source={{ uri: comment.user.profileImage }} style={styles.commentUserImage} onError={(e) => console.error('Error loading image:', e.nativeEvent.error)} />
-                ) : (
-                  <Icon name="user" size={24} color="#000" />
-                )}
-                <Text style={styles.commentUserName}>{comment.user?.name || 'Usuario desconocido'}</Text>
-              </View>
-              <Text style={styles.commentText}>{comment.content}</Text>
-              <Text style={styles.commentTimestamp}>{moment(comment.timestamp.toDate()).format('LLL')}</Text>
-            </View>
+            <ComentarioCard key={comment.id} comment={comment} />
           ))}
         </View>
       </ScrollView>
@@ -213,31 +191,11 @@ const ClaseDetail = () => {
         <Icon name="comment" size={24} color="#fff" />
       </TouchableOpacity>
 
-      <Modal
-        transparent={true}
+      <ModalComentario
         visible={commentModalVisible}
-        animationType="slide"
-        onRequestClose={closeCommentModal}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <TouchableOpacity style={styles.closeButton} onPress={closeCommentModal}>
-              <Icon name="close" size={24} color="#000" />
-            </TouchableOpacity>
-            <Text style={styles.label}>ESCRIBE TU COMENTARIO</Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Enter your comment"
-              placeholderTextColor="#666"
-              value={comment}
-              onChangeText={setComment}
-            />
-            <TouchableOpacity style={styles.submitButton} onPress={handleCommentSubmit}>
-              <Text style={styles.buttonTextSubmit}>PUBLICAR</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        onClose={closeCommentModal}
+        onSubmit={handleCommentSubmit}
+      />
 
       <ProfileModal
         visible={profileModalVisible}
@@ -298,36 +256,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
-  },
-  commentCard: {
-    backgroundColor: '#e0e0e0',
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 10,
-  },
-  commentHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 5,
-  },
-  commentUserImage: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    marginRight: 10,
-  },
-  commentUserName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  commentText: {
-    fontSize: 16,
-  },
-  commentTimestamp: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'right',
-    marginTop: 5,
   },
   fab: {
     position: 'absolute',

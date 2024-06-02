@@ -4,6 +4,10 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import { Checkbox, Button } from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../utils/firebase';
+import User from '../model/User';
+import Curso from '../model/Curso';
 import Footer from '../components/Footer';
 import MenuModal from '../components/MenuModal';
 
@@ -12,7 +16,6 @@ const { width } = Dimensions.get('window');
 const CoursesScreen = () => {
   const navigation = useNavigation();
   const [menuModalVisible, setMenuModalVisible] = useState(false);
-
   const [courses, setCourses] = useState([]);
   const [professors, setProfessors] = useState([]);
   const [visibleCourses, setVisibleCourses] = useState(10);
@@ -24,10 +27,30 @@ const CoursesScreen = () => {
   const [showProfessors, setShowProfessors] = useState(true);
 
   useEffect(() => {
-    const allCourses = Array.from({ length: 25 }, (_, i) => ({ id: i + 1, name: `Curso ${i + 1}`, recent: i < 10, category: i % 3 === 0 ? 'math' : 'science' }));
-    const allProfessors = Array.from({ length: 10 }, (_, i) => ({ id: i + 1, name: `Profesor ${i + 1}`, description: `Descripción del Profesor ${i + 1}`, image: 'https://via.placeholder.com/150', recent: i < 5, category: i % 2 === 0 ? 'math' : 'science' }));
-    setCourses(allCourses);
-    setProfessors(allProfessors);
+    const fetchCoursesAndProfessors = async () => {
+      try {
+        const coursesQuerySnapshot = await getDocs(collection(db, 'Cursos'));
+        const coursesData = coursesQuerySnapshot.docs.map(doc => {
+          console.log("Course document data:", doc.data());
+          return Curso.fromFirestore(doc);
+        });
+
+        const professorsQuerySnapshot = await getDocs(collection(db, 'users'));
+        const professorsData = professorsQuerySnapshot.docs.map(doc => {
+          console.log("User document data:", doc.data());
+          return User.fromFirestore(doc);
+        });
+
+        setCourses(coursesData);
+        setProfessors(professorsData);
+        console.log("Fetched courses:", coursesData);
+        console.log("Fetched professors:", professorsData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchCoursesAndProfessors();
   }, []);
 
   const loadMoreCourses = () => {
@@ -43,6 +66,7 @@ const CoursesScreen = () => {
     setVisibleProfessors(4);
     setIsFilterModalVisible(false);
   };
+
   const openMenuModal = () => {
     setMenuModalVisible(true);
   };
@@ -50,6 +74,7 @@ const CoursesScreen = () => {
   const closeMenuModal = () => {
     setMenuModalVisible(false);
   };
+
   const handleMenuItemPress = (item) => {
     closeMenuModal();
     if (item.name === 'DETALLES USUARIO') {
@@ -58,11 +83,11 @@ const CoursesScreen = () => {
       navigation.navigate('UserInterface');
     } else if (item.name === 'METODO DE PAGO') {
       navigation.navigate('MetodoPago');
-    }else if (item.name === 'TERMINOS Y CONDICIONES') {
+    } else if (item.name === 'TERMINOS Y CONDICIONES') {
       navigation.navigate('TerminosyCondiciones');
     }
   };
- 
+
   const menuItems = [
     { id: 1, name: 'DETALLES USUARIO' },
     { id: 2, name: 'METODO DE PAGO' },
@@ -90,7 +115,7 @@ const CoursesScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}  onPress={openMenuModal}>
+        <TouchableOpacity style={styles.backButton} onPress={openMenuModal}>
           <Icon name="bars" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.title}>Cursos Disponibles</Text>
@@ -132,22 +157,25 @@ const CoursesScreen = () => {
           </View>
         </View>
       </Modal>
+
       <MenuModal
         visible={menuModalVisible}
         onClose={closeMenuModal}
         menuItems={menuItems}
         handleMenuItemPress={handleMenuItemPress}
       />
+
       {isSingleView ? (
         <ScrollView contentContainerStyle={styles.verticalScrollView}>
           {showCourses && filteredCourses.slice(0, visibleCourses).map((course) => (
-            <View key={course.id} style={[styles.card, styles.verticalCard]}>
-              <Text style={styles.cardText}>{course.name}</Text>
+            <View key={course.courseId} style={[styles.card, styles.verticalCard]}>
+              <Image source={{ uri: course.imageUrl }} style={styles.cardImage} />
+              <Text style={styles.cardText}>{course.courseName}</Text>
             </View>
           ))}
           {showProfessors && filteredProfessors.slice(0, visibleProfessors).map((professor) => (
-            <View key={professor.id} style={[styles.professorCard, styles.verticalProfessorCard]}>
-              <Image source={{ uri: professor.image }} style={styles.professorImage} />
+            <View key={professor.uid} style={[styles.professorCard, styles.verticalProfessorCard]}>
+              <Image source={{ uri: professor.fotoPerfil }} style={styles.professorImage} />
               <Text style={styles.professorName}>{professor.name}</Text>
               <Text style={styles.professorDescription}>{professor.description}</Text>
             </View>
@@ -170,8 +198,9 @@ const CoursesScreen = () => {
               <Text style={styles.sectionTitle}>CURSOS DISPONIBLES</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScrollView}>
                 {filteredCourses.slice(0, visibleCourses).map((course) => (
-                  <View key={course.id} style={styles.card}>
-                    <Text style={styles.cardText}>{course.name}</Text>
+                  <View key={course.courseId} style={styles.card}>
+                    <Image source={{ uri: course.imageUrl }} style={styles.cardImage} />
+                    <Text style={styles.cardText}>{course.courseName}</Text>
                   </View>
                 ))}
                 {visibleCourses < filteredCourses.length && (
@@ -187,8 +216,8 @@ const CoursesScreen = () => {
               <Text style={styles.sectionTitle}>PROFESORES DISPONIBLES</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScrollView}>
                 {filteredProfessors.slice(0, visibleProfessors).map((professor) => (
-                  <View key={professor.id} style={styles.professorCard}>
-                    <Image source={{ uri: professor.image }} style={styles.professorImage} />
+                  <View key={professor.uid} style={styles.professorCard}>
+                    <Image source={{ uri: professor.fotoPerfil }} style={styles.professorImage} />
                     <Text style={styles.professorName}>{professor.name}</Text>
                     <Text style={styles.professorDescription}>{professor.description}</Text>
                   </View>
@@ -203,9 +232,7 @@ const CoursesScreen = () => {
           )}
         </ScrollView>
       )}
- <Footer />
-
-
+      <Footer />
     </View>
   );
 };
@@ -300,10 +327,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginRight: 16,
   },
-  verticalCard: {
-    alignSelf: 'center',
-    width: width * 0.9,  // Aumentar el ancho de la tarjeta en vista vertical
-    marginBottom: 16,
+  cardImage: {
+    width: 150,
+    height: 100,
+    borderRadius: 10,
   },
   cardText: {
     fontSize: 16,
@@ -317,11 +344,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginRight: 16,
     padding: 10,
-  },
-  verticalProfessorCard: {
-    alignSelf: 'center',
-    width: width * 0.9,  // Aumentar el ancho de la tarjeta en vista vertical
-    marginBottom: 16,
   },
   professorImage: {
     width: 100,
@@ -355,19 +377,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#e0e0e0',
     borderRadius: 25,
     marginLeft: 10,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 10,
-    backgroundColor: '#f8f8f8',
-  },
-  footerButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  footerButtonText: {
-    fontSize: 12,
   },
 });
 

@@ -18,6 +18,7 @@ const ProfesorDetail = () => {
   const [video, setVideo] = useState(null);
   const [uploading, setUploading] = useState(false);
   const navigation = useNavigation();
+  const [documentos, setDocumentos] = useState('');
 
   const fetchClases = async () => {
     try {
@@ -41,6 +42,15 @@ const ProfesorDetail = () => {
       console.error('Error fetching classes:', error);
     }
   };
+  const  isValidUrl = (url) => {
+    const pattern = new RegExp('^(https?:\\/\\/)?' + // protocolo
+    '((([a-zA-Z0-9\\-\\.]+)\\.[a-zA-Z]{2,})|' + // dominio
+    '((\\d{1,3}\\.){3}\\d{1,3}))' + // o dirección IP (v4)
+    '(\\:\\d+)?(\\/[-a-zA-Z0-9%_.~+]*)*' + // puerto y ruta
+    '(\\?[;&a-zA-Z0-9%_.~+=-]*)?' + // cadena de consulta
+    '(\\#[-a-zA-Z0-9_]*)?$', 'i'); // fragmento
+  return !!pattern.test(url);
+  }
 
   useEffect(() => {
     fetchClases();
@@ -121,20 +131,24 @@ const ProfesorDetail = () => {
 
   const handleCreateClass = async () => {
     if (!className || !duration || !image) {
-      Alert.alert('Error', 'El nombre de la clase, la duración y la imagen son obligatorias.');
+      Alert.alert('Error', 'Asegúrese de que todos los campos obligatorios están completos.');
       return;
     }
-
+    if (!isValidUrl(documentos)) {
+      Alert.alert('Error', 'No se ha podido crear la clase porque documentos no era una URL válida.');
+      return;
+    }
+  
     setUploading(true);
-
+  
     try {
-      const imageUrl = await uploadFile(image, 'image');
+      const imageUrl = await uploadFile(image, 'image') ;
       const videoUrl = video ? await uploadFile(video, 'video') : null;
-
+  
       // Crear una referencia a una nueva clase en la colección 'Clases'
       const classRef = doc(collection(db, 'Clases'));
       const classId = classRef.id;
-
+  
       // Guardar la nueva clase en Firestore
       await setDoc(classRef, {
         classId: classId,
@@ -143,8 +157,9 @@ const ProfesorDetail = () => {
         duration: duration,
         imageUrl: imageUrl,
         videoUrl: videoUrl, // Almacenar la URL del video si existe
+        documentos: documentos, // Almacenar la URL de los documentos
       });
-
+  
       Alert.alert('Éxito', 'Clase creada con ID: ' + classId);
       await fetchClases(); // Actualizar la lista de clases después de crear una nueva clase
       closeModal();
@@ -155,6 +170,8 @@ const ProfesorDetail = () => {
       setUploading(false);
     }
   };
+  
+  
 
   const openModal = () => {
     setModalVisible(true);
@@ -164,6 +181,7 @@ const ProfesorDetail = () => {
     setModalVisible(false);
     setClassName('');
     setDuration('');
+    setDocumentos('');
     setImage(null);
     setVideo(null);
   };
@@ -231,6 +249,14 @@ const ProfesorDetail = () => {
               value={duration}
               onChangeText={setDuration}
             />
+            <Text style={styles.label}>Documentos</Text>
+<TextInput
+  style={styles.input}
+  placeholder="Ingrese url de documentos"
+  value={documentos}
+  onChangeText={setDocumentos}
+/>
+
             <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
               {image ? (
                 <Image source={{ uri: image }} style={styles.image} />
@@ -407,4 +433,3 @@ const styles = StyleSheet.create({
 });
 
 export default ProfesorDetail;
-

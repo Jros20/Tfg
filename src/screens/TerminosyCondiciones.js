@@ -1,7 +1,9 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Dimensions, Animated } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Dimensions, Animated, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
+import { auth, db } from '../utils/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import Footer from '../components/Footer';
 import MenuModal from '../components/MenuModal';
 import ProfileModal from '../components/ProfileModal';
@@ -12,9 +14,30 @@ const TerminosYCondicionesScreen = () => {
   const [menuModalVisible, setMenuModalVisible] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
+  const [profileImage, setProfileImage] = useState(null);
   const navigation = useNavigation();
   const userIconRef = useRef(null);
   const translateX = useRef(new Animated.Value(-width)).current;
+
+  useEffect(() => {
+    const fetchUserProfileImage = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setProfileImage(userData.profileImage || userData.fotoPerfil);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user profile image:', error);
+      }
+    };
+
+    fetchUserProfileImage();
+  }, []);
 
   const openMenuModal = () => {
     setMenuModalVisible(true);
@@ -46,14 +69,13 @@ const TerminosYCondicionesScreen = () => {
       navigation.navigate('UserDetail');
     } else if (item.name === 'MIS CURSOS') {
       navigation.navigate('UserInterface');
-    } else if (item.name === 'METODO DE PAGO') {
-      navigation.navigate('MetodoPago');
+    } else if (item.name === 'TERMINOS Y CONDICIONES') {
+      navigation.navigate('TerminosyCondiciones');
     }
   };
 
   const menuItems = [
     { id: 1, name: 'DETALLES USUARIO' },
-    { id: 2, name: 'METODO DE PAGO' },
     { id: 3, name: 'MIS CURSOS' },
     { id: 4, name: 'BUSCO PROFE' },
     { id: 5, name: 'TERMINOS Y CONDICIONES' },
@@ -65,13 +87,17 @@ const TerminosYCondicionesScreen = () => {
         <TouchableOpacity style={styles.menuButton} onPress={openMenuModal}>
           <Icon name="bars" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.title}>Términos y Condiciones</Text>
+        <Text style={styles.title}>TyC</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.searchButton} onPress={() => navigation.navigate('SearchScreen')}>
             <Icon name="search" size={24} color="#000" />
           </TouchableOpacity>
           <TouchableOpacity ref={userIconRef} style={styles.profileButton} onPress={openProfileModal}>
-            <Icon name="user" size={24} color="#000" />
+            {profileImage ? (
+              <Image source={{ uri: profileImage }} style={styles.profileImage} />
+            ) : (
+              <Icon name="user" size={24} color="#000" />
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -134,6 +160,11 @@ const styles = StyleSheet.create({
   },
   profileButton: {
     padding: 10,
+  },
+  profileImage: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
   },
   content: {
     flex: 1,

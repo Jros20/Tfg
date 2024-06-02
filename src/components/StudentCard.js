@@ -1,4 +1,3 @@
-// StudentCard.js
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -16,7 +15,7 @@ const StudentCard = ({ student }) => {
       <View style={styles.infoContainer}>
         <Text style={styles.name}>{student.name}</Text>
         <Text style={styles.email}>{student.email}</Text>
-        <Text style={styles.category}>Categoría: {student.category}</Text>
+        <Text style={styles.interests}>Intereses: {student.interests.join(', ')}</Text>
       </View>
       <TouchableOpacity style={styles.chatIcon} onPress={navigateToChat}>
         <Icon name="comments" size={24} color="#000" />
@@ -46,7 +45,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
-  category: {
+  interests: {
     fontSize: 14,
     color: '#888',
   },

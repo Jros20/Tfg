@@ -69,8 +69,7 @@ const UserInterface = () => {
 
   const menuItems = [
     { id: 1, name: 'DETALLES USUARIO' },
-    { id: 2, name: 'METODO DE PAGO' },
-    { id: 3, name: 'MIS CURSOS' },
+     { id: 3, name: 'MIS CURSOS' },
     { id: 4, name: 'BUSCO PROFE' },
     { id: 5, name: 'TERMINOS Y CONDICIONES' },
   ];
@@ -81,9 +80,7 @@ const UserInterface = () => {
       navigation.navigate('UserDetail');
     } else if (item.name === 'MIS CURSOS') {
       navigation.navigate('UserInterface');
-    } else if (item.name === 'METODO DE PAGO') {
-      navigation.navigate('MetodoPago');
-    } else if (item.name === 'TERMINOS Y CONDICIONES') {
+    }   else if (item.name === 'TERMINOS Y CONDICIONES') {
       navigation.navigate('TerminosyCondiciones');
     }
   };

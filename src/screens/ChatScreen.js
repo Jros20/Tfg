@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions, FlatList } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Dimensions, FlatList, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import Footer from '../components/Footer';
@@ -7,6 +7,8 @@ import MenuModal from '../components/MenuModal';
 import ProfileModal from '../components/ProfileModal';
 import ContactCard from '../components/ContactCard';
 import MessageModal from '../components/MessageModal';
+import { auth, db } from '../utils/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 const { width } = Dimensions.get('window');
 
@@ -15,9 +17,32 @@ const ChatScreen = () => {
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [messageModalVisible, setMessageModalVisible] = useState(false);
   const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
+  const [userRole, setUserRole] = useState(null);
+  const [profileImage, setProfileImage] = useState(null);
   const translateX = useRef(new Animated.Value(-width)).current;
   const userIconRef = useRef(null);
   const navigation = useNavigation();
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setProfileImage(userData.profileImage || userData.fotoPerfil);
+            setUserRole(userData.role);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   const openModal = () => {
     setModalVisible(true);
@@ -53,13 +78,17 @@ const ChatScreen = () => {
   };
 
   const handleMenuItemPress = (item) => {
+    closeModal();
     if (item.name === 'DETALLES USUARIO') {
-      closeModal();
       navigation.navigate('UserDetail');
     } else if (item.name === 'MIS CURSOS') {
-      navigation.navigate('UserInterface');
-    } else if (item.name === 'METODO DE PAGO') {
-      navigation.navigate('MetodoPago');
+      if (userRole === 'PROFESOR') {
+        navigation.navigate('TeacherInterface');
+      } else {
+        navigation.navigate('UserInterface');
+      }
+    } else if (item.name === 'TERMINOS Y CONDICIONES') {
+      navigation.navigate('TerminosyCondiciones');
     }
   };
 
@@ -70,7 +99,6 @@ const ChatScreen = () => {
 
   const menuItems = [
     { id: 1, name: 'DETALLES USUARIO' },
-    { id: 2, name: 'METODO DE PAGO' },
     { id: 3, name: 'MIS CURSOS' },
     { id: 4, name: 'BUSCO PROFE' },
     { id: 5, name: 'TERMINOS Y CONDICIONES' },
@@ -99,7 +127,11 @@ const ChatScreen = () => {
             <Icon name="search" size={24} color="#000" />
           </TouchableOpacity>
           <TouchableOpacity ref={userIconRef} style={styles.profileButton} onPress={openProfileModal}>
-            <Icon name="user" size={24} color="#000" />
+            {profileImage ? (
+              <Image source={{ uri: profileImage }} style={styles.profileImage} />
+            ) : (
+              <Icon name="user" size={24} color="#000" />
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -168,6 +200,11 @@ const styles = StyleSheet.create({
   },
   profileButton: {
     padding: 10,
+  },
+  profileImage: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
   },
   listContent: {
     paddingHorizontal: 16,

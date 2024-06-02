@@ -1,10 +1,32 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
+import { auth, db } from '../utils/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 const Footer = () => {
   const navigation = useNavigation();
+  const [userRole, setUserRole] = useState(null);
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            setUserRole(userDoc.data().role);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user role:', error);
+      }
+    };
+
+    fetchUserRole();
+  }, []);
 
   const navigateToChatScreen = () => {
     navigation.navigate('ChatScreen');
@@ -15,7 +37,11 @@ const Footer = () => {
   };
 
   const navigateToSearchScreen = () => {
-    navigation.navigate('SearchScreen');
+    if (userRole === 'PROFESOR') {
+      navigation.navigate('StudentSearchScreen');
+    } else {
+      navigation.navigate('SearchScreen');
+    }
   };
 
   return (

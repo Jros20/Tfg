@@ -15,7 +15,6 @@ class User {
       email: this.email,
       role: this.role,
       fotoPerfil: this.fotoPerfil,
-      profileImage: this.profileImage,
     };
   }
 

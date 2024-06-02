@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Modal, Animated, Dimensions, TextInput, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, Animated, Dimensions, TextInput, StyleSheet, Platform, Image } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -8,6 +8,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import Footer from '../components/Footer';
 import MenuModal from '../components/MenuModal';
 import ProfileModal from '../components/ProfileModal';
+import { auth, db } from '../utils/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 const { width } = Dimensions.get('window');
 
@@ -26,7 +28,30 @@ const CalendarScreen = () => {
   const userIconRef = useRef(null);
   const translateX = useRef(new Animated.Value(-width)).current;
   const today = new Date().toISOString().split('T')[0];
+  const [userRole, setUserRole] = useState(null); // Añadir esta línea al inicio del componente, junto con otros estados
+  const [profileImage, setProfileImage] = useState(null); // Añadir esta línea para la imagen de perfil
 
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setProfileImage(userData.profileImage || userData.fotoPerfil);
+            setUserRole(userData.role); // Añadir esta línea para asignar el rol del usuario
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
+  
+    fetchUserProfile();
+  }, []);
+  
   useEffect(() => {
     const loadNotes = async () => {
       try {
@@ -121,15 +146,18 @@ const CalendarScreen = () => {
     closeModal();
     if (item.name === 'DETALLES USUARIO') {
       navigation.navigate('UserDetail');
-    } else if (item.name === 'MIS CURSOS') {
-      navigation.navigate('UserInterface');
-    } else if (item.name === 'METODO DE PAGO') {
-      navigation.navigate('MetodoPago');
+    }else if (item.name === 'MIS CURSOS') {
+      if (userRole === 'PROFESOR') {
+        navigation.navigate('TeacherInterface');
+      } else {
+        navigation.navigate('UserInterface');
+      }
+    }else if (item.name === 'TERMINOS Y CONDICIONES') {
+      navigation.navigate('TerminosyCondiciones');
     }
   };
   const menuItems = [
     { id: 1, name: 'DETALLES USUARIO' },
-    { id: 2, name: 'METODO DE PAGO' },
     { id: 3, name: 'MIS CURSOS' },
     { id: 4, name: 'BUSCO PROFE' },
     { id: 5, name: 'TERMINOS Y CONDICIONES' },
@@ -143,11 +171,21 @@ const CalendarScreen = () => {
         </TouchableOpacity>
         <Text style={styles.title}>Calendario</Text>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.searchButton} onPress={() => navigation.navigate('SearchScreen')}>
+          <TouchableOpacity style={styles.searchButton} onPress={() => {
+            if (userRole === 'PROFESOR') {
+              navigation.navigate('StudentSearchScreen');
+            } else {
+              navigation.navigate('SearchScreen');
+            }
+          }}>
             <Icon name="search" size={24} color="#000" />
           </TouchableOpacity>
           <TouchableOpacity ref={userIconRef} style={styles.profileButton} onPress={openProfileModal}>
-            <Icon name="user" size={24} color="#000" />
+            {profileImage ? (
+              <Image source={{ uri: profileImage }} style={styles.profileImage} />
+            ) : (
+              <Icon name="user" size={24} color="#000" />
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -262,6 +300,11 @@ const styles = StyleSheet.create({
   },
   profileButton: {
     padding: 10,
+  },
+  profileImage: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
   },
   calendar: {
     margin: 10,

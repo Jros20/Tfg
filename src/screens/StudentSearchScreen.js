@@ -1,22 +1,75 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Footer from '../components/Footer';
 import StudentCard from '../components/StudentCard';
 import { Picker } from '@react-native-picker/picker';
-
-const studentsData = [
-  { id: '1', name: 'Juan Antonio', email: 'juan.antonio@example.com', category: 'Matemáticas' },
-  { id: '2', name: 'Maria Garcia', email: 'maria.garcia@example.com', category: 'Física' },
-  { id: '3', name: 'Luis Fernandez', email: 'luis.fernandez@example.com', category: 'Química' },
-];
-
-const categories = ['Todas', 'Matemáticas', 'Física', 'Química'];
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../utils/firebase';
+import { useNavigation } from '@react-navigation/native';
 
 const StudentSearchScreen = () => {
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todas');
-  const [filteredStudents, setFilteredStudents] = useState(studentsData);
+  const [students, setStudents] = useState([]);
+  const [filteredStudents, setFilteredStudents] = useState([]);
+  const [categories, setCategories] = useState(['Todas']); // Default category 'Todas'
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const fetchCategoriesAndStudents = async () => {
+      try {
+        const categoriesQuerySnapshot = await getDocs(collection(db, 'Categorias'));
+        const categoriesData = categoriesQuerySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const categoryMap = categoriesData.reduce((map, category) => {
+          map[category.id] = category.NombreCategoria;
+          return map;
+        }, {});
+
+        setCategories(['Todas', ...categoriesData.map(cat => cat.NombreCategoria)]);
+
+        const usersQuerySnapshot = await getDocs(collection(db, 'users'));
+        const studentsQuerySnapshot = await getDocs(collection(db, 'Estudiantes'));
+
+        console.log("Users Query Snapshot:", usersQuerySnapshot.docs.length);
+        console.log("Students Query Snapshot:", studentsQuerySnapshot.docs.length);
+
+        const studentsData = [];
+
+        studentsQuerySnapshot.forEach((studentDoc) => {
+          const studentData = studentDoc.data();
+          console.log("Student Document Data:", studentData);
+
+          const userDoc = usersQuerySnapshot.docs.find(userDoc => userDoc.id === studentDoc.id);
+          if (userDoc) {
+            const userData = userDoc.data();
+            console.log("User Document Data:", userData);
+
+            if (userData.role === 'ALUMNO') { // Ajuste para buscar rol "ALUMNO"
+              const student = {
+                id: userData.uid,
+                name: userData.name,
+                email: userData.email,
+                interests: studentData.intereses.map(interestId => categoryMap[interestId]).filter(Boolean), // Convertir IDs de intereses a nombres de categorías
+                profileImage: userData.profileImage || userData.fotoPerfil // Usar profileImage o fotoPerfil
+              };
+              studentsData.push(student);
+            }
+          } else {
+            console.log(`No matching user found for student ID: ${studentDoc.id}`);
+          }
+        });
+
+        setStudents(studentsData);
+        setFilteredStudents(studentsData);
+        console.log("Fetched students:", studentsData);  // Log the fetched students
+      } catch (error) {
+        console.error('Error fetching students:', error);
+      }
+    };
+
+    fetchCategoriesAndStudents();
+  }, []);
 
   const handleSearch = (text) => {
     setSearchText(text);
@@ -29,12 +82,13 @@ const StudentSearchScreen = () => {
   };
 
   const filterStudents = (text, category) => {
-    const filtered = studentsData.filter(student =>
-      (category === 'Todas' || student.category === category) &&
+    const filtered = students.filter(student =>
+      (category === 'Todas' || student.interests.includes(category)) &&
       (student.name.toLowerCase().includes(text.toLowerCase()) ||
        student.id.includes(text))
     );
     setFilteredStudents(filtered);
+    console.log("Filtered students:", filtered);  // Log the filtered students
   };
 
   const renderStudent = ({ item }) => (
@@ -44,8 +98,8 @@ const StudentSearchScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.menuButton}>
-          <Icon name="bars" size={24} color="#000" />
+        <TouchableOpacity style={styles.menuButton} onPress={() => navigation.goBack()}>
+          <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.title}>Buscar Alumnos</Text>
         <View style={styles.headerRight}>

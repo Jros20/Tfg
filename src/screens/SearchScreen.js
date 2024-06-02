@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Dimensions } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import { Checkbox, Button } from 'react-native-paper';
@@ -10,6 +10,8 @@ import User from '../model/User';
 import Curso from '../model/Curso';
 import Footer from '../components/Footer';
 import MenuModal from '../components/MenuModal';
+import CursoItemCard from '../components/CursoItemCard';
+import ProfesorItemCard from '../components/ProfesorItemCard';
 
 const { width } = Dimensions.get('window');
 
@@ -107,16 +109,14 @@ const CoursesScreen = () => {
       navigation.navigate('UserDetail');
     } else if (item.name === 'MIS CURSOS') {
       navigation.navigate('UserInterface');
-    } else if (item.name === 'METODO DE PAGO') {
-      navigation.navigate('MetodoPago');
-    } else if (item.name === 'TERMINOS Y CONDICIONES') {
+    } 
+     else if (item.name === 'TERMINOS Y CONDICIONES') {
       navigation.navigate('TerminosyCondiciones');
     }
   };
 
   const menuItems = [
     { id: 1, name: 'DETALLES USUARIO' },
-    { id: 2, name: 'METODO DE PAGO' },
     { id: 3, name: 'MIS CURSOS' },
     { id: 4, name: 'BUSCO PROFE' },
     { id: 5, name: 'TERMINOS Y CONDICIONES' },
@@ -204,17 +204,10 @@ const CoursesScreen = () => {
       {isSingleView ? (
         <ScrollView contentContainerStyle={styles.verticalScrollView}>
           {showCourses && filteredCourses.slice(0, visibleCourses).map((course) => (
-            <View key={course.courseId} style={[styles.card, styles.verticalCard]}>
-              <Image source={{ uri: course.imageUrl }} style={styles.cardImage} />
-              <Text style={styles.cardText}>{course.courseName}</Text>
-            </View>
+            <CursoItemCard key={course.courseId} course={course} />
           ))}
           {showProfessors && filteredProfessors.slice(0, visibleProfessors).map((professor) => (
-            <View key={professor.uid} style={[styles.professorCard, styles.verticalProfessorCard]}>
-              <Image source={{ uri: professor.profileImage }} style={styles.professorImage} />
-              <Text style={styles.professorName}>{professor.name}</Text>
-              <Text style={styles.professorDescription}>{professor.description}</Text>
-            </View>
+            <ProfesorItemCard key={professor.uid} professor={professor} />
           ))}
           {showCourses && visibleCourses < filteredCourses.length && (
             <TouchableOpacity style={styles.loadMoreButton} onPress={loadMoreCourses}>
@@ -234,10 +227,7 @@ const CoursesScreen = () => {
               <Text style={styles.sectionTitle}>CURSOS DISPONIBLES</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScrollView}>
                 {filteredCourses.slice(0, visibleCourses).map((course) => (
-                  <View key={course.courseId} style={styles.card}>
-                    <Image source={{ uri: course.imageUrl }} style={styles.cardImage} />
-                    <Text style={styles.cardText}>{course.courseName}</Text>
-                  </View>
+                  <CursoItemCard key={course.courseId} course={course} />
                 ))}
                 {visibleCourses < filteredCourses.length && (
                   <TouchableOpacity style={styles.loadMoreButtonHorizontal} onPress={loadMoreCourses}>
@@ -252,11 +242,7 @@ const CoursesScreen = () => {
               <Text style={styles.sectionTitle}>PROFESORES DISPONIBLES</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScrollView}>
                 {filteredProfessors.slice(0, visibleProfessors).map((professor) => (
-                  <View key={professor.uid} style={styles.professorCard}>
-                    <Image source={{ uri: professor.profileImage }} style={styles.professorImage} />
-                    <Text style={styles.professorName}>{professor.name}</Text>
-                    <Text style={styles.professorDescription}>{professor.description}</Text>
-                  </View>
+                  <ProfesorItemCard key={professor.uid} professor={professor} />
                 ))}
                 {visibleProfessors < filteredProfessors.length && (
                   <TouchableOpacity style={styles.loadMoreButtonHorizontal} onPress={loadMoreProfessors}>
@@ -429,6 +415,5 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
 });
-
 
 export default CoursesScreen;

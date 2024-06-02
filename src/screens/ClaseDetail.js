@@ -3,8 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, ScrollView,
 import { WebView } from 'react-native-webview';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { doc, getDoc } from 'firebase/firestore';
-import { db, auth } from '../utils/firebase'; // Asegúrate de que auth está correctamente importado
+import { doc, getDoc, collection, addDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { db, auth } from '../utils/firebase';
 import ProfileModal from '../components/ProfileModal';
 
 const ClaseDetail = () => {
@@ -17,7 +17,8 @@ const ClaseDetail = () => {
   const [comment, setComment] = useState('');
   const [classData, setClassData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [profileImage, setProfileImage] = useState(null); // Nuevo estado para la imagen de perfil
+  const [comments, setComments] = useState([]);
+  const [profileImage, setProfileImage] = useState(null);
   const userIconRef = useRef(null);
 
   useEffect(() => {
@@ -39,6 +40,24 @@ const ClaseDetail = () => {
     };
 
     fetchClassData();
+  }, [classId]);
+
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        const q = query(collection(db, 'Comentarios'), where('classId', '==', classId));
+        const querySnapshot = await getDocs(q);
+        const commentsData = [];
+        querySnapshot.forEach((doc) => {
+          commentsData.push({ id: doc.id, ...doc.data() });
+        });
+        setComments(commentsData);
+      } catch (error) {
+        console.error('Error fetching comments:', error);
+      }
+    };
+
+    fetchComments();
   }, [classId]);
 
   useEffect(() => {
@@ -75,9 +94,36 @@ const ClaseDetail = () => {
     setProfileModalVisible(false);
   };
 
-  const handleCommentSubmit = () => {
-    // Lógica para enviar el comentario
-    closeCommentModal();
+  const handleCommentSubmit = async () => {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        await addDoc(collection(db, 'Comentarios'), {
+          UID: user.uid,
+          classId: classId,
+          content: comment,
+          timestamp: Timestamp.now()
+        });
+        const updatedComments = await getComments(classId);
+        setComments(updatedComments);
+        setComment('');
+        closeCommentModal();
+      } else {
+        console.log('User not authenticated');
+      }
+    } catch (error) {
+      console.error('Error submitting comment:', error);
+    }
+  };
+
+  const getComments = async (classId) => {
+    const q = query(collection(db, 'Comentarios'), where('classId', '==', classId));
+    const querySnapshot = await getDocs(q);
+    const commentsData = [];
+    querySnapshot.forEach((doc) => {
+      commentsData.push({ id: doc.id, ...doc.data() });
+    });
+    return commentsData;
   };
 
   if (loading) {
@@ -118,9 +164,11 @@ const ClaseDetail = () => {
         )}
         <View style={styles.commentsSection}>
           <Text style={styles.commentsTitle}>COMENTARIOS</Text>
-          <View style={styles.commentCard}>
-            <Text style={styles.commentText}>ME HA ENCANTADO EL VIDEO</Text>
-          </View>
+          {comments.map(comment => (
+            <View key={comment.id} style={styles.commentCard}>
+              <Text style={styles.commentText}>{comment.content}</Text>
+            </View>
+          ))}
         </View>
       </ScrollView>
 

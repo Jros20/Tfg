@@ -6,6 +6,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { doc, getDoc, collection, addDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { db, auth } from '../utils/firebase';
 import ProfileModal from '../components/ProfileModal';
+import moment from 'moment';
 
 const ClaseDetail = () => {
   const route = useRoute();
@@ -29,6 +30,7 @@ const ClaseDetail = () => {
 
         if (docSnap.exists()) {
           setClassData(docSnap.data());
+          console.log("Fetched class data:", docSnap.data());
         } else {
           console.log('No such document!');
         }
@@ -45,12 +47,7 @@ const ClaseDetail = () => {
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        const q = query(collection(db, 'Comentarios'), where('classId', '==', classId));
-        const querySnapshot = await getDocs(q);
-        const commentsData = [];
-        querySnapshot.forEach((doc) => {
-          commentsData.push({ id: doc.id, ...doc.data() });
-        });
+        const commentsData = await getComments(classId);
         setComments(commentsData);
       } catch (error) {
         console.error('Error fetching comments:', error);
@@ -68,6 +65,7 @@ const ClaseDetail = () => {
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists() && userDoc.data().profileImage) {
           setProfileImage(userDoc.data().profileImage);
+          console.log("Fetched profile image:", userDoc.data().profileImage);
         }
       }
     };
@@ -117,12 +115,42 @@ const ClaseDetail = () => {
   };
 
   const getComments = async (classId) => {
+    console.log("Fetching comments for classId:", classId); // Log
     const q = query(collection(db, 'Comentarios'), where('classId', '==', classId));
     const querySnapshot = await getDocs(q);
     const commentsData = [];
-    querySnapshot.forEach((doc) => {
-      commentsData.push({ id: doc.id, ...doc.data() });
-    });
+    for (const docSnap of querySnapshot.docs) {
+      const commentData = docSnap.data();
+      console.log("Fetched comment data:", commentData); // Log
+      try {
+        const userDocRef = doc(db, 'users', commentData.UID);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          console.log("Fetched user data:", userData); // Log
+          commentsData.push({ 
+            id: docSnap.id, 
+            ...commentData, 
+            user: userData 
+          });
+        } else {
+          console.log(`No such user with UID: ${commentData.UID}`);
+          commentsData.push({
+            id: docSnap.id,
+            ...commentData,
+            user: { name: 'Usuario desconocido', profileImage: null }
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error); // Log error
+        commentsData.push({
+          id: docSnap.id,
+          ...commentData,
+          user: { name: 'Error al obtener usuario', profileImage: null }
+        });
+      }
+    }
+    console.log("Final comments data:", commentsData); // Log
     return commentsData;
   };
 
@@ -166,7 +194,16 @@ const ClaseDetail = () => {
           <Text style={styles.commentsTitle}>COMENTARIOS</Text>
           {comments.map(comment => (
             <View key={comment.id} style={styles.commentCard}>
+              <View style={styles.commentHeader}>
+                {comment.user?.profileImage ? (
+                  <Image source={{ uri: comment.user.profileImage }} style={styles.commentUserImage} onError={(e) => console.error('Error loading image:', e.nativeEvent.error)} />
+                ) : (
+                  <Icon name="user" size={24} color="#000" />
+                )}
+                <Text style={styles.commentUserName}>{comment.user?.name || 'Usuario desconocido'}</Text>
+              </View>
               <Text style={styles.commentText}>{comment.content}</Text>
+              <Text style={styles.commentTimestamp}>{moment(comment.timestamp.toDate()).format('LLL')}</Text>
             </View>
           ))}
         </View>
@@ -268,8 +305,29 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginBottom: 10,
   },
+  commentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  commentUserImage: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginRight: 10,
+  },
+  commentUserName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   commentText: {
     fontSize: 16,
+  },
+  commentTimestamp: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'right',
+    marginTop: 5,
   },
   fab: {
     position: 'absolute',

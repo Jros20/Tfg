@@ -249,9 +249,16 @@ const ChatScreen = () => {
         </TouchableOpacity>
         <Text style={styles.title}>CHAT</Text>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.searchButton}>
-            <Icon name="search" size={24} color="#000" />
-          </TouchableOpacity>
+        <TouchableOpacity style={styles.searchButton} onPress={() => {
+  if (userRole === 'PROFESOR') {
+    navigation.navigate('StudentSearchScreen');
+  } else {
+    navigation.navigate('SearchScreen');
+  }
+}}>
+  <Icon name="search" size={24} color="#000" />
+</TouchableOpacity>
+
           <TouchableOpacity ref={userIconRef} style={styles.profileButton} onPress={openProfileModal}>
             {profileImage ? (
               <Image source={{ uri: profileImage }} style={styles.profileImage} />

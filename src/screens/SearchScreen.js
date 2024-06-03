@@ -40,10 +40,12 @@ const CoursesScreen = () => {
         });
 
         const professorsQuerySnapshot = await getDocs(collection(db, 'users'));
-        const professorsData = professorsQuerySnapshot.docs.map(doc => {
-          console.log("User document data:", doc.data());
-          return User.fromFirestore(doc);
-        });
+        const professorsData = professorsQuerySnapshot.docs
+          .map(doc => {
+            console.log("User document data:", doc.data());
+            return User.fromFirestore(doc);
+          })
+          .filter(user => user.role === 'PROFESOR');  // Filtrar solo usuarios con rol 'PROFESOR'
 
         setCourses(coursesData);
         setProfessors(professorsData);

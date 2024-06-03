@@ -141,15 +141,15 @@ const TeacherInterface = () => {
       navigation.navigate('UserDetail');
     } else if (item.name === 'MIS CURSOS') {
       navigation.navigate('TeacherInterface');
-      
-    } else if (item.name === 'TERMINOS Y CONDICIONES') {
+    }  
+     else if (item.name === 'TERMINOS Y CONDICIONES') {
       navigation.navigate('TerminosyCondiciones');
     }
   };
 
   const menuItems = [
     { id: 1, name: 'DETALLES USUARIO' },
-     { id: 3, name: 'MIS CURSOS' },
+    { id: 3, name: 'MIS CURSOS' },
     { id: 4, name: 'BUSCO PROFE' },
     { id: 5, name: 'TERMINOS Y CONDICIONES' },
   ];

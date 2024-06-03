@@ -6,19 +6,18 @@ import Footer from '../components/Footer';
 import MenuModal from '../components/MenuModal';
 import ProfileModal from '../components/ProfileModal';
 import ContactCard from '../components/ContactCard';
-import MessageModal from '../components/MessageModal';
 import { auth, db } from '../utils/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 
 const { width } = Dimensions.get('window');
 
 const ChatScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [profileModalVisible, setProfileModalVisible] = useState(false);
-  const [messageModalVisible, setMessageModalVisible] = useState(false);
   const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
   const [userRole, setUserRole] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
+  const [contacts, setContacts] = useState([]);
   const translateX = useRef(new Animated.Value(-width)).current;
   const userIconRef = useRef(null);
   const navigation = useNavigation();
@@ -43,6 +42,69 @@ const ChatScreen = () => {
 
     fetchUserProfile();
   }, []);
+
+  useEffect(() => {
+    const fetchContacts = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          if (userRole === 'PROFESOR') {
+            // Obtener cursos del profesor
+            const coursesQuery = query(collection(db, 'Cursos'), where('tutorId', '==', user.uid));
+            const coursesSnapshot = await getDocs(coursesQuery);
+
+            const courseIds = coursesSnapshot.docs.map(doc => doc.data().courseId);
+
+            // Obtener inscripciones de los cursos del profesor
+            const enrollmentsQuery = query(collection(db, 'Inscripciones'), where('cursoId', 'in', courseIds));
+            const enrollmentSnapshot = await getDocs(enrollmentsQuery);
+
+            const studentIds = [...new Set(enrollmentSnapshot.docs.map(doc => doc.data().estudianteId))];
+
+            // Obtener detalles de los estudiantes
+            const studentsQuery = query(collection(db, 'users'), where('uid', 'in', studentIds));
+            const studentsSnapshot = await getDocs(studentsQuery);
+
+            const studentsData = studentsSnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }));
+
+            setContacts(studentsData);
+          } else {
+            // Obtener inscripciones del usuario
+            const enrollmentsQuery = query(collection(db, 'Inscripciones'), where('estudianteId', '==', user.uid));
+            const enrollmentSnapshot = await getDocs(enrollmentsQuery);
+
+            const courseIds = enrollmentSnapshot.docs.map(doc => doc.data().cursoId);
+
+            // Obtener detalles de los cursos
+            const coursesQuery = query(collection(db, 'Cursos'), where('courseId', 'in', courseIds));
+            const coursesSnapshot = await getDocs(coursesQuery);
+
+            const tutorIds = [...new Set(coursesSnapshot.docs.map(doc => doc.data().tutorId))];
+
+            // Obtener detalles de los profesores
+            const professorsQuery = query(collection(db, 'users'), where('uid', 'in', tutorIds));
+            const professorsSnapshot = await getDocs(professorsQuery);
+
+            const professorsData = professorsSnapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }));
+
+            setContacts(professorsData);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching contacts:', error);
+      }
+    };
+
+    if (userRole) {
+      fetchContacts();
+    }
+  }, [userRole]);
 
   const openModal = () => {
     setModalVisible(true);
@@ -92,27 +154,11 @@ const ChatScreen = () => {
     }
   };
 
-  const handleSendMessage = (profesor, message) => {
-    // Implementar la lógica para enviar el mensaje
-    console.log(`Mensaje enviado a ${profesor.name}: ${message}`);
-  };
-
   const menuItems = [
     { id: 1, name: 'DETALLES USUARIO' },
     { id: 3, name: 'MIS CURSOS' },
     { id: 4, name: 'BUSCO PROFE' },
     { id: 5, name: 'TERMINOS Y CONDICIONES' },
-  ];
-
-  const profesores = [
-    { id: 1, name: 'PROFE MATES' },
-    { id: 2, name: 'PROFE MATES' },
-    { id: 3, name: 'PROFE MATES' },
-    { id: 4, name: 'PROFE MATES' },
-    { id: 5, name: 'PROFE MATES' },
-    { id: 6, name: 'PROFE MATES' },
-    { id: 7, name: 'PROFE MATES' },
-    { id: 8, name: 'PROFE MATES' },
   ];
 
   return (
@@ -137,15 +183,11 @@ const ChatScreen = () => {
       </View>
 
       <FlatList
-        data={profesores}
+        data={contacts}
         renderItem={({ item }) => <ContactCard contact={item} />}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.listContent}
       />
-
-      <TouchableOpacity style={styles.floatingButton} onPress={() => setMessageModalVisible(true)}>
-        <Icon name="comment" size={24} color="#fff" />
-      </TouchableOpacity>
 
       <Footer />
 
@@ -160,11 +202,6 @@ const ChatScreen = () => {
         onClose={closeProfileModal}
         userIconPosition={userIconPosition}
         navigateToUserDetail={navigateToUserDetail}
-      />
-      <MessageModal
-        visible={messageModalVisible}
-        onClose={() => setMessageModalVisible(false)}
-        onSend={handleSendMessage}
       />
     </View>
   );
@@ -209,18 +246,6 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 16,
     paddingBottom: 20,
-  },
-  floatingButton: {
-    position: 'absolute',
-    bottom: 90,
-    right: 30,
-    backgroundColor: '#1E90FF',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 4,
   },
 });
 

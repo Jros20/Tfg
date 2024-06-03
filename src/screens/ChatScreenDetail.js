@@ -1,18 +1,48 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TouchableWithoutFeedback, TextInput, FlatList } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TouchableWithoutFeedback, TextInput, FlatList, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { collection, addDoc, query, where, getDocs, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
+import { auth, db } from '../utils/firebase';
 
 const ChatScreenDetail = () => {
+  const route = useRoute();
+  const { contactId, contactName, contactImage } = route.params;
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState([
-    { id: '1', text: 'HOLA QUE TAL ESTAS?', time: '17:28', isMine: false },
-    { id: '2', text: 'MUY BIEN, GRACIAS', time: '18:23', isMine: true },
-  ]);
+  const [messages, setMessages] = useState([]);
   const userIconRef = useRef(null);
   const navigation = useNavigation();
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          const conversacionId = getConversacionId(user.uid, contactId);
+          const mensajesQuery = query(
+            collection(db, 'mensajes', conversacionId, 'mensajes'),
+            orderBy('timestamp', 'asc')
+          );
+          onSnapshot(mensajesQuery, (snapshot) => {
+            const fetchedMessages = snapshot.docs.map((doc) => {
+              return { id: doc.id, ...doc.data() };
+            });
+            setMessages(fetchedMessages);
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+      }
+    };
+
+    fetchMessages();
+  }, [contactId]);
+
+  const getConversacionId = (uid1, uid2) => {
+    return uid1 < uid2 ? uid1 + uid2 : uid2 + uid1;
+  };
 
   const openProfileModal = () => {
     userIconRef.current.measure((fx, fy, width, height, px, py) => {
@@ -30,20 +60,29 @@ const ChatScreenDetail = () => {
     navigation.navigate('UserDetail');
   };
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (message.trim()) {
-      setMessages([
-        ...messages,
-        { id: Date.now().toString(), text: message, time: new Date().toLocaleTimeString().slice(0, 5), isMine: true },
-      ]);
-      setMessage('');
+      const user = auth.currentUser;
+      if (user) {
+        const conversacionId = getConversacionId(user.uid, contactId);
+        try {
+          await addDoc(collection(db, 'mensajes', conversacionId, 'mensajes'), {
+            UID: user.uid,
+            contenido: message,
+            timestamp: Timestamp.now(),
+          });
+          setMessage('');
+        } catch (error) {
+          console.error('Error sending message:', error);
+        }
+      }
     }
   };
 
   const renderMessage = ({ item }) => (
-    <View style={[styles.messageBubble, item.isMine ? styles.myMessageBubble : {}]}>
-      <Text style={styles.messageText}>{item.text}</Text>
-      <Text style={styles.messageTime}>{item.time}</Text>
+    <View style={[styles.messageBubble, item.UID === auth.currentUser.uid ? styles.myMessageBubble : {}]}>
+      <Text style={styles.messageText}>{item.contenido}</Text>
+      <Text style={styles.messageTime}>{item.timestamp.toDate().toLocaleTimeString().slice(0, 5)}</Text>
     </View>
   );
 
@@ -53,14 +92,14 @@ const ChatScreenDetail = () => {
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.title}>Chat</Text>
+        <View style={styles.contactInfo}>
+          {contactImage && (
+            <Image source={{ uri: contactImage }} style={styles.contactImage} />
+          )}
+          <Text style={styles.title}>{contactName}</Text>
+        </View>
         <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.searchButton}>
-            <Icon name="search" size={24} color="#000" />
-          </TouchableOpacity>
-          <TouchableOpacity ref={userIconRef} style={styles.profileButton} onPress={openProfileModal}>
-            <Icon name="user" size={24} color="#000" />
-          </TouchableOpacity>
+          
         </View>
       </View>
 
@@ -132,13 +171,25 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingBottom: 10,
     backgroundColor: '#f8f8f8',
+    marginBottom:10,
   },
   backButton: {
     padding: 10,
   },
+  contactInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   title: {
+    marginLeft: 10,
     fontSize: 20,
     fontWeight: 'bold',
+    marginRight: 10,
+  },
+  contactImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   headerRight: {
     flexDirection: 'row',
@@ -228,7 +279,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   overlay: {
-    flex: 10, 
+    flex: 10,
     backgroundColor: 'rgba(0, 0, 0, 0)',
   },
 });

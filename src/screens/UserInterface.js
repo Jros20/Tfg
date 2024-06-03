@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, Text, Image, Alert } from 'react-native';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { View, ScrollView, StyleSheet, TouchableOpacity, Text, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Footer from '../components/Footer';
 import MenuModal from '../components/MenuModal';
 import ProfileModal from '../components/ProfileModal';
 import CourseCard from '../components/CourseCard';
 import StudentInfoModal from '../components/StudentInfoModal';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db, auth } from '../utils/firebase';
 
 const UserInterface = () => {
@@ -16,11 +16,12 @@ const UserInterface = () => {
   const [infoModalVisible, setInfoModalVisible] = useState(false);
   const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
   const [profileImage, setProfileImage] = useState(null);
+  const [courses, setCourses] = useState([]);
   const userIconRef = useRef(null);
   const navigation = useNavigation();
+  const user = auth.currentUser;
 
   const checkStudentInfo = async () => {
-    const user = auth.currentUser;
     if (user) {
       const studentDocRef = doc(db, 'Estudiantes', user.uid);
       const studentDoc = await getDoc(studentDocRef);
@@ -34,7 +35,6 @@ const UserInterface = () => {
   };
 
   const fetchUserProfileImage = async () => {
-    const user = auth.currentUser;
     if (user) {
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
@@ -47,10 +47,35 @@ const UserInterface = () => {
     }
   };
 
-  useEffect(() => {
-    checkStudentInfo();
-    fetchUserProfileImage();
-  }, []);
+  const fetchCourses = async () => {
+    try {
+      if (user) {
+        const enrollmentsQuery = query(collection(db, 'Inscripciones'), where('estudianteId', '==', user.uid));
+        const enrollmentsSnapshot = await getDocs(enrollmentsQuery);
+        const courseIds = enrollmentsSnapshot.docs.map(doc => doc.data().cursoId);
+
+        const coursePromises = courseIds.map(courseId => getDoc(doc(db, 'Cursos', courseId)));
+        const courseDocs = await Promise.all(coursePromises);
+
+        const coursesData = courseDocs.map(courseDoc => ({
+          courseId: courseDoc.id,
+          ...courseDoc.data()
+        }));
+        
+        setCourses(coursesData);
+      }
+    } catch (error) {
+      console.error('Error fetching user courses:', error);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      checkStudentInfo();
+      fetchUserProfileImage();
+      fetchCourses();
+    }, [])
+  );
 
   const openModal = () => setModalVisible(true);
   const closeModal = () => setModalVisible(false);
@@ -69,7 +94,7 @@ const UserInterface = () => {
 
   const menuItems = [
     { id: 1, name: 'DETALLES USUARIO' },
-     { id: 3, name: 'MIS CURSOS' },
+    { id: 3, name: 'MIS CURSOS' },
     { id: 4, name: 'BUSCO PROFE' },
     { id: 5, name: 'TERMINOS Y CONDICIONES' },
   ];
@@ -80,7 +105,7 @@ const UserInterface = () => {
       navigation.navigate('UserDetail');
     } else if (item.name === 'MIS CURSOS') {
       navigation.navigate('UserInterface');
-    }   else if (item.name === 'TERMINOS Y CONDICIONES') {
+    } else if (item.name === 'TERMINOS Y CONDICIONES') {
       navigation.navigate('TerminosyCondiciones');
     }
   };
@@ -107,8 +132,8 @@ const UserInterface = () => {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {menuItems.slice(2).map((course) => (
-          <CourseCard key={course.id} course={course} />
+        {courses.map((course) => (
+          <CourseCard key={course.courseId} course={course} />
         ))}
       </ScrollView>
       <Footer />

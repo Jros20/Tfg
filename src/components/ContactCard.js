@@ -7,17 +7,19 @@ const ContactCard = ({ contact }) => {
   const navigation = useNavigation();
 
   return (
-    <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('ChatScreenDetail', { contactId: contact.id , contactName: contact.name,contactImage: contact.profileImage })}>
+    <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('ChatScreenDetail', { contactId: contact.id })}>
       {contact.profileImage ? (
         <Image source={{ uri: contact.profileImage }} style={styles.icon} />
       ) : (
         <Icon name="user" size={40} color="#000" style={styles.icon} />
       )}
       <Text style={styles.text}>{contact.name}</Text>
+      <Text style={styles.hiddenText}>{contact.id}</Text> 
     </TouchableOpacity>
   );
 };
- const styles = StyleSheet.create({
+
+const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -34,6 +36,9 @@ const ContactCard = ({ contact }) => {
   text: {
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  hiddenText: {
+    display: 'none', // Hide the ID
   },
 });
 

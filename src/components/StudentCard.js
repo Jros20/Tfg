@@ -2,12 +2,18 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
+import { auth } from '../utils/firebase';
+import createAviso from '../utils/CreateAviso';
 
 const StudentCard = ({ student }) => {
   const navigation = useNavigation();
 
-  const navigateToChat = () => {
-    navigation.navigate('ChatScreenDetail', { studentId: student.id });
+  const navigateToChat = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      await createAviso(user.uid, student.id);
+      navigation.navigate('ChatScreenDetail', { contactId: student.id, contactName: student.name, contactImage: student.profileImage });
+    }
   };
 
   return (

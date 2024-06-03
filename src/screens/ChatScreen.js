@@ -18,6 +18,7 @@ const ChatScreen = () => {
   const [userRole, setUserRole] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
   const [contacts, setContacts] = useState([]);
+  const [avisos, setAvisos] = useState([]);
   const translateX = useRef(new Animated.Value(-width)).current;
   const userIconRef = useRef(null);
   const navigation = useNavigation();
@@ -33,6 +34,7 @@ const ChatScreen = () => {
             const userData = userDoc.data();
             setProfileImage(userData.profileImage || userData.fotoPerfil);
             setUserRole(userData.role);
+            console.log('User profile fetched:', userData);
           }
         }
       } catch (error) {
@@ -106,6 +108,43 @@ const ChatScreen = () => {
     }
   }, [userRole]);
 
+  useEffect(() => {
+    const fetchAvisos = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          console.log('Fetching avisos...');
+          const avisosQuery = query(
+            collection(db, 'avisos'),
+            where('receiverId', '==', user.uid)
+          );
+
+          const avisosSnapshot = await getDocs(avisosQuery);
+          const fetchedAvisos = avisosSnapshot.docs.map(doc => doc.data());
+          console.log('Avisos fetched by receiverId:', fetchedAvisos);
+
+          const avisosSentQuery = query(
+            collection(db, 'avisos'),
+            where('senderId', '==', user.uid)
+          );
+
+          const avisosSentSnapshot = await getDocs(avisosSentQuery);
+          const fetchedAvisosSent = avisosSentSnapshot.docs.map(doc => doc.data());
+          console.log('Avisos fetched by senderId:', fetchedAvisosSent);
+
+          const allAvisos = [...fetchedAvisos, ...fetchedAvisosSent];
+          console.log('All avisos:', allAvisos);
+
+          setAvisos(allAvisos);
+        }
+      } catch (error) {
+        console.error('Error fetching avisos:', error);
+      }
+    };
+
+    fetchAvisos();
+  }, []);
+
   const openModal = () => {
     setModalVisible(true);
     Animated.timing(translateX, {
@@ -160,6 +199,47 @@ const ChatScreen = () => {
     { id: 4, name: 'BUSCO PROFE' },
     { id: 5, name: 'TERMINOS Y CONDICIONES' },
   ];
+
+  useEffect(() => {
+    const checkAndAddContactsFromAvisos = async () => {
+      try {
+        const user = auth.currentUser;
+        if (user && avisos.length > 0) {
+          const contactIds = new Set(contacts.map(contact => contact.id));
+          const newContacts = [];
+
+          for (const aviso of avisos) {
+            if (!contactIds.has(aviso.senderId) && aviso.senderId !== user.uid) {
+              const senderDoc = await getDoc(doc(db, 'users', aviso.senderId));
+              if (senderDoc.exists()) {
+                newContacts.push({ id: senderDoc.id, ...senderDoc.data() });
+              }
+            }
+
+            if (!contactIds.has(aviso.receiverId) && aviso.receiverId !== user.uid) {
+              const receiverDoc = await getDoc(doc(db, 'users', aviso.receiverId));
+              if (receiverDoc.exists()) {
+                newContacts.push({ id: receiverDoc.id, ...receiverDoc.data() });
+              }
+            }
+          }
+
+          // Remove duplicates
+          const uniqueNewContacts = newContacts.filter((contact, index, self) =>
+            index === self.findIndex((c) => c.id === contact.id)
+          );
+
+          if (uniqueNewContacts.length > 0) {
+            setContacts(prevContacts => [...prevContacts, ...uniqueNewContacts]);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking and adding contacts from avisos:', error);
+      }
+    };
+
+    checkAndAddContactsFromAvisos();
+  }, [avisos]);
 
   return (
     <View style={styles.container}>

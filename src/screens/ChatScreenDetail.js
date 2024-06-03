@@ -1,21 +1,37 @@
+// ChatScreenDetail.js
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, TouchableWithoutFeedback, TextInput, FlatList, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { collection, addDoc, query, where, getDocs, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, orderBy, onSnapshot, Timestamp, doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../utils/firebase';
 
 const ChatScreenDetail = () => {
   const route = useRoute();
-  const { contactId, contactName, contactImage } = route.params;
+  const { contactId } = route.params;
   const [profileModalVisible, setProfileModalVisible] = useState(false);
   const [userIconPosition, setUserIconPosition] = useState({ x: 0, y: 0 });
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
+  const [contactName, setContactName] = useState('');
+  const [contactImage, setContactImage] = useState('');
   const userIconRef = useRef(null);
   const navigation = useNavigation();
 
   useEffect(() => {
+    const fetchContactInfo = async () => {
+      try {
+        const contactDoc = await getDoc(doc(db, 'users', contactId));
+        if (contactDoc.exists()) {
+          const contactData = contactDoc.data();
+          setContactName(contactData.name);
+          setContactImage(contactData.profileImage || contactData.fotoPerfil);
+        }
+      } catch (error) {
+        console.error('Error fetching contact info:', error);
+      }
+    };
+
     const fetchMessages = async () => {
       try {
         const user = auth.currentUser;
@@ -37,6 +53,7 @@ const ChatScreenDetail = () => {
       }
     };
 
+    fetchContactInfo();
     fetchMessages();
   }, [contactId]);
 
@@ -71,6 +88,7 @@ const ChatScreenDetail = () => {
             contenido: message,
             timestamp: Timestamp.now(),
           });
+        
           setMessage('');
         } catch (error) {
           console.error('Error sending message:', error);
@@ -78,6 +96,7 @@ const ChatScreenDetail = () => {
       }
     }
   };
+  
 
   const renderMessage = ({ item }) => (
     <View style={[styles.messageBubble, item.UID === auth.currentUser.uid ? styles.myMessageBubble : {}]}>

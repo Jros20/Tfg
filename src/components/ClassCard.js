@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { getDoc, doc, deleteDoc, getDocs, collection } from 'firebase/firestore';
+import { getDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db, auth } from '../utils/firebase';
 
-const ClassCard = ({ clase }) => {
+const ClassCard = ({ clase, onPress }) => {
   const [userRole, setUserRole] = useState('');
   const [isDeleted, setIsDeleted] = useState(false);
 
@@ -26,11 +26,6 @@ const ClassCard = ({ clase }) => {
 
     fetchUserRole();
   }, []);
-
-  const handlePress = () => {
-    console.log(`ClassCard pressed with classId: ${clase.id}`);
-    // Aquí puedes añadir lógica adicional para manejar la pulsación del botón si es necesario
-  };
 
   const confirmDelete = () => {
     Alert.alert(
@@ -58,7 +53,7 @@ const ClassCard = ({ clase }) => {
   }
 
   return (
-    <TouchableOpacity style={styles.classCard} onPress={handlePress}>
+    <TouchableOpacity style={styles.classCard} onPress={() => onPress(clase.id)}>
       <Image source={{ uri: clase.imageUrl }} style={styles.classImage} />
       <View style={styles.classDetails}>
         <Text style={styles.className}>Clase: {clase.className}</Text>

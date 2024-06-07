@@ -126,11 +126,8 @@ const CoursesScreen = () => {
 
   const filterItems = (items) => {
     let filtered = items;
-    if (filter === 'recent') {
-      filtered = filtered.filter((item) => item.recent);
-    }
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter((item) => item.category === selectedCategory);
+      filtered = filtered.filter((item) => item.categoryId === selectedCategory);
     }
     return filtered;
   };

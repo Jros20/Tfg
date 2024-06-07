@@ -7,7 +7,6 @@ import ClassModal from '../components/ClassModal';
 import Clase from '../model/Clase';
 import Footer from '../components/Footer';
 import ProfileModal from '../components/ProfileModal';
-
 import { db, auth } from '../utils/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import User from '../model/User';
@@ -197,7 +196,6 @@ const ProfesorDetail = () => {
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
         <View style={styles.headerRight}>
-        
           <TouchableOpacity ref={userIconRef} style={styles.profileButton} onPress={openProfileModal}>
             {profileImage ? (
               <Image source={{ uri: profileImage }} style={styles.profileImage} />
@@ -218,20 +216,17 @@ const ProfesorDetail = () => {
             <ClassCard
               key={clase.id}
               clase={clase}
-              onPress={() => handleClassCardPress(clase.id)}
+              onPress={handleClassCardPress} // Pasamos la función de navegación aquí
             />
           ))
         )}
       </ScrollView>
 
-
-
       {userRole === 'PROFESOR' && (
-  <TouchableOpacity style={styles.fab} onPress={openModal}>
-    <Icon name="plus" size={24} color="#fff" />
-  </TouchableOpacity>
-)}
-
+        <TouchableOpacity style={styles.fab} onPress={openModal}>
+          <Icon name="plus" size={24} color="#fff" />
+        </TouchableOpacity>
+      )}
 
       <Footer />
 
